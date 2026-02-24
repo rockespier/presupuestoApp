@@ -1,0 +1,11 @@
+﻿@model Espacio
+<h2>Crear Nuevo Presupuesto</h2>
+<hr />
+<form asp-action="Create">
+    <div class="form-group mb-4">
+        <label asp-for="Nombre" class="control-label fw-bold">Nombre del Presupuesto</label>
+        <input asp-for="Nombre" class="form-control" placeholder="Ej: Mi Empresa, Viaje a Europa..." required />
+    </div>
+    <button type="submit" class="btn btn-primary">Crear y Seleccionar</button>
+    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Cancelar</a>
+</form>

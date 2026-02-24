@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+@using PresupuestoFamiliarApp.Data
+@using System.Security.Claims
+@inject PresupuestoContext _context
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@inject PresupuestoFamiliarApp.Data.PresupuestoContext _context
+@{
+    // Leemos la cookie. Si no existe, usamos el espacio 1 (Mi Casa)
+    var cookieStr = HttpContextAccessor.HttpContext?.Request.Cookies["EspacioActivoId"];
+    int espacioActualId = int.TryParse(cookieStr, out int id) ? id : 1;
+
+    // Obtenemos todos los espacios y el actual
+    var espacios = _context.Espacios.ToList();
+    var espacioActual = espacios.FirstOrDefault(e => e.Id == espacioActualId) ?? espacios.First();
+}
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PresupuestoFamiliarApp</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PresupuestoFamiliarApp.styles.css" asp-append-version="true" />
+    
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary py-3 shadow-sm">
+            <div class="container-fluid px-4">
+
+                <div class="me-4">
+                    @{
+                        int espacioActivoId = Context.Request.Cookies["EspacioActivoId"] != null ? int.Parse(Context.Request.Cookies["EspacioActivoId"]) : 1;
+                        List<PresupuestoFamiliarApp.Models.Espacio> espaciosPermitidos = new();
+
+                        if (User.Identity.IsAuthenticated)
+                        {
+                            // Si es Admin, ve todos
+                            if (User.IsInRole("Administrador"))
+                            {
+                                espaciosPermitidos = _context.Espacios.ToList();
+                            }
+                            // Si es Usuario normal, leemos la lista de IDs que le dimos al iniciar sesión
+                            else
+                            {
+                                var claimEspacios = User.Claims.FirstOrDefault(c => c.Type == "EspaciosPermitidos")?.Value;
+                                if (!string.IsNullOrEmpty(claimEspacios))
+                                {
+                                    var ids = claimEspacios.Split(',').Select(int.Parse).ToList();
+                                    espaciosPermitidos = _context.Espacios.Where(e => ids.Contains(e.Id)).ToList();
+                                }
+                            }
+                        }
+
+                        var espacioActivo = espaciosPermitidos.FirstOrDefault(e => e.Id == espacioActivoId) ?? espaciosPermitidos.FirstOrDefault();
+                    }
+
+                    @if (espaciosPermitidos.Any())
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-light dropdown-toggle fw-bold text-primary shadow-sm" type="button" id="espacioDropdown" data-bs-toggle="dropdown">
+                                🏢 @(espacioActivo?.Nombre ?? "Seleccionar Espacio")
+                            </button>
+                            <ul class="dropdown-menu shadow-lg border-0 mt-2">
+                                @foreach (var espacio in espaciosPermitidos)
+                                {
+                                    <li>
+                                        <form asp-controller="Home" asp-action="CambiarEspacio" method="post">
+                                            <input type="hidden" name="id" value="@espacio.Id" />
+                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+
+                                            <button type="submit" class="dropdown-item @(espacio.Id == espacioActivoId ? "active fw-bold" : "")">
+                                                @espacio.Nombre
+                                            </button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navPrincipal">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navPrincipal">
+
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2 fs-6">
+                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Home" asp-action="Index">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Cuentas" asp-action="Index">Cuentas</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Transacciones" asp-action="Index">Historial</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Presupuestos" asp-action="Index">Presupuestos</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" asp-controller="MovimientosFijos" asp-action="Index">Suscripciones</a></li>
+                    </ul>
+
+                    <div class="d-flex align-items-center gap-3">
+
+                        <a class="btn btn-warning fw-bold rounded-pill px-4 shadow-sm" asp-controller="Transferencias" asp-action="Create">
+                            🔄 Transferir
+                        </a>
+                        <a class="btn btn-light text-primary fw-bold rounded-pill px-4 shadow-sm" asp-controller="Transacciones" asp-action="Create">
+                            + Nuevo Movimiento
+                        </a>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <ul class="navbar-nav ms-2">
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle text-white fw-bold d-flex align-items-center" href="#" id="perfilDropdown" role="button" data-bs-toggle="dropdown">
+                                        <span class="bg-white text-primary rounded-circle px-2 py-1 me-2" style="font-size: 0.85rem;">👤</span>
+                                        @User.Identity.Name
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
+
+                                        @if (User.IsInRole("Administrador"))
+                                        {
+                                            <li><h6 class="dropdown-header text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Configuración</h6></li>
+                                            <li><a class="dropdown-item py-2" asp-controller="Espacios" asp-action="Index">🏢 Espacios</a></li>
+                                            <li><a class="dropdown-item py-2" asp-controller="Usuarios" asp-action="Index">👥 Usuarios</a></li>
+                                            <li><a class="dropdown-item py-2" asp-controller="TiposCambio" asp-action="Index">💱 Tipos de Cambio</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                        }
+
+                                        <li><a class="dropdown-item text-danger py-2 fw-bold" asp-controller="Auth" asp-action="Logout">🚪 Cerrar Sesión</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - PresupuestoFamiliarApp 
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Leer los mensajes desde el servidor
+            var mensajeExito = '@TempData["Exito"]';
+            var mensajeError = '@TempData["Error"]';
+
+            if (mensajeExito) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Excelente!',
+                    text: mensajeExito,
+                    timer: 3000, // Se cierra solo en 3 segundos
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end' // Aparece en la esquina superior derecha
+                });
+            }
+
+            if (mensajeError) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: mensajeError
+                });
+            }
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

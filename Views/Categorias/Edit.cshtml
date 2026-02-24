@@ -1,0 +1,43 @@
+﻿@model CategoriaGasto
+
+@{
+    ViewData["Title"] = "Editar Presupuesto";
+}
+
+<h2>Editar Presupuesto: <span class="text-primary">@Model.Nombre</span></h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <form asp-action="Edit">
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Nombre" class="control-label fw-bold"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Subcategoria" class="control-label fw-bold">Subcategorías incluidas</label>
+                        <input asp-for="Subcategoria" class="form-control" placeholder="Ej. Agua, Luz, Gas..." />
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="PresupuestoMensual" class="control-label fw-bold">Presupuesto Mensual Asignado</label>
+                        <div class="input-group">
+                            <span class="input-group-text">@ViewBag.SimboloMoneda</span>
+                            <input asp-for="PresupuestoMensual" type="number" step="0.01" class="form-control form-control-lg text-primary fw-bold" required />
+                        </div>
+                    </div>
+
+                    <div class="form-group d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                        <input type="submit" value="Guardar Cambios" class="btn btn-primary px-4" />
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,44 @@
+﻿@model IEnumerable<PresupuestoFamiliarApp.Models.Usuario>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gestión de Usuarios</h2>
+    <a asp-action="Create" class="btn btn-primary">+ Nuevo Usuario</a>
+</div>
+
+<table class="table table-hover bg-white shadow-sm rounded">
+    <thead class="table-dark">
+        <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Presupuesto (Espacio) Asignado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td class="fw-bold">@item.NombreUsuario</td>
+                <td><span class="badge @(item.Rol == "Administrador" ? "bg-danger" : "bg-success")">@item.Rol</span></td>
+                <td>
+                    @if (item.Rol == "Administrador")
+                    {
+                        <span class="text-muted fst-italic">Todos (Acceso Total)</span>
+                    }
+                    else
+                    {
+                        @string.Join(", ", item.Espacios.Select(e => e.Nombre))
+                    }
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning fw-bold">Editar</a>
+
+                    @if (item.Id != 1 && item.NombreUsuario.ToLower() != "admin")
+                    {
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger fw-bold ms-1" onclick="return confirm('¿Estás seguro de que deseas eliminar a este usuario permanentemente?');">Eliminar</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

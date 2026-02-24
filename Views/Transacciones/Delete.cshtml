@@ -1,0 +1,37 @@
+﻿@model Transaccion
+
+@{
+    ViewData["Title"] = "Eliminar Movimiento";
+}
+
+<h2 class="text-danger">Eliminar Movimiento</h2>
+<hr />
+
+<div class="alert alert-warning">
+    <h5>¿Estás seguro de que deseas eliminar este registro?</h5>
+    <p>Al eliminarlo, el saldo de la cuenta <strong>@Model.Cuenta.Nombre</strong> se recalculará automáticamente.</p>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Fecha:</dt>
+            <dd class="col-sm-9">@Model.Fecha.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Descripción:</dt>
+            <dd class="col-sm-9">@Model.Descripcion</dd>
+
+            <dt class="col-sm-3">Monto:</dt>
+            <dd class="col-sm-9 fw-bold">€ @Model.Monto.ToString("N2")</dd>
+
+            <dt class="col-sm-3">Tipo:</dt>
+            <dd class="col-sm-9">@Model.Tipo</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Sí, Eliminar de forma permanente</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar y volver</a>
+</form>

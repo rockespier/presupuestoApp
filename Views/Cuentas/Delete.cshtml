@@ -1,0 +1,12 @@
+﻿@model Cuenta
+<h2 class="text-danger">Eliminar Cuenta</h2>
+<div class="alert alert-danger">
+    <h4>¡ADVERTENCIA!</h4>
+    <p>Estás a punto de eliminar la cuenta <strong>@Model.Nombre</strong>.</p>
+    <p>Si la eliminas, <strong>TODOS los ingresos, gastos y transferencias asociados a esta cuenta se borrarán permanentemente</strong> de tu historial.</p>
+</div>
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Sí, estoy seguro de Eliminar</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

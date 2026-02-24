@@ -1,0 +1,66 @@
+﻿@model PresupuestoFamiliarApp.Models.Usuario
+
+<h2>Editar Usuario: <span class="text-primary">@Model.NombreUsuario</span></h2>
+<hr />
+
+<form asp-action="Edit" class="card p-4 shadow-sm bg-light" style="max-width: 600px;">
+    <input type="hidden" name="id" value="@Model.Id" />
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">Por favor corrige los errores indicados.</div>
+    }
+
+    <div class="form-group mb-3">
+        <label class="fw-bold">Nombre de Usuario (Login)</label>
+        <input type="text" name="NombreUsuario" value="@Model.NombreUsuario" class="form-control" required />
+        @Html.ValidationMessage("NombreUsuario", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group mb-3 p-3 bg-white border border-warning rounded">
+        <label class="fw-bold text-warning">🔑 Actualizar Contraseña</label>
+        <input type="password" name="PasswordPlain" class="form-control" placeholder="Escribe una nueva contraseña..." />
+        <small class="text-muted fw-bold">Déjalo en blanco si NO deseas cambiar la contraseña actual.</small>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="fw-bold">Rol en el sistema</label>
+        <select name="Rol" class="form-select">
+            @if (Model.Rol == "Usuario")
+            {
+                <option value="Usuario" selected>Usuario Normal (Solo sus presupuestos)</option>
+                <option value="Administrador">Administrador (Control Total)</option>
+            }
+            else
+            {
+                <option value="Usuario">Usuario Normal (Solo sus presupuestos)</option>
+                <option value="Administrador" selected>Administrador (Control Total)</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group mb-4 p-3 border rounded bg-white shadow-sm">
+        <label class="fw-bold mb-2">¿A qué presupuestos (Espacios) tendrá acceso?</label>
+        <div class="row">
+            @foreach (var espacio in ViewBag.Espacios)
+            {
+                // Lógica para saber si esta casilla debe estar marcada o no
+                bool estaAsignado = Model.Espacios.Any(e => e.Id == espacio.Id);
+
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="espaciosSeleccionados" value="@espacio.Id" id="espacio_@espacio.Id" @(estaAsignado ? "checked" : "")>
+                        <label class="form-check-label fw-bold text-primary" for="espacio_@espacio.Id">
+                            @espacio.Nombre
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-warning fw-bold text-dark px-4">Actualizar Usuario</button>
+        <a asp-action="Index" class="btn btn-secondary px-4">Cancelar</a>
+    </div>
+</form>

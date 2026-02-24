@@ -1,0 +1,22 @@
+﻿@model CategoriaGasto
+<h2>Nueva Categoría</h2>
+<hr />
+<form asp-action="Create">
+    <div class="form-group mb-3">
+        <label asp-for="Nombre" class="control-label fw-bold"></label>
+        <input asp-for="Nombre" class="form-control" placeholder="Ej. Educación, Salud..." required />
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Subcategoria" class="control-label fw-bold">Subcategorías (Opcional)</label>
+        <input asp-for="Subcategoria" class="form-control" />
+    </div>
+    <div class="form-group mb-4">
+        <label asp-for="PresupuestoMensual" class="control-label fw-bold">Presupuesto Mensual Asignado</label>
+        <div class="input-group">
+            <span class="input-group-text">@ViewBag.SimboloMoneda</span>
+            <input asp-for="PresupuestoMensual" type="number" step="0.01" class="form-control form-control-lg text-primary fw-bold" required />
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Crear Categoría</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

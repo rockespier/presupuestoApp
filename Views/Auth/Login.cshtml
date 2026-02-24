@@ -1,0 +1,43 @@
+﻿@{
+    Layout = null; // No queremos el menú lateral aquí
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Iniciar Sesión - PresupuestoApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+</head>
+<body class="bg-light d-flex align-items-center" style="height: 100vh;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="card shadow-lg border-0 rounded-lg mt-5">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3 class="font-weight-light my-2">🔐 Presupuestos</h3>
+                    </div>
+                    <div class="card-body">
+                        @if (ViewBag.Error != null)
+                        {
+                            <div class="alert alert-danger fw-bold">@ViewBag.Error</div>
+                        }
+                        <form asp-action="Login" method="post">
+                            <div class="form-floating mb-3">
+                                <input class="form-control" name="username" type="text" placeholder="Usuario" required />
+                                <label>Nombre de Usuario</label>
+                            </div>
+                            <div class="form-floating mb-4">
+                                <input class="form-control" name="password" type="password" placeholder="Contraseña" required />
+                                <label>Contraseña</label>
+                            </div>
+                            <div class="d-grid">
+                                <button class="btn btn-primary btn-lg fw-bold" type="submit">Ingresar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

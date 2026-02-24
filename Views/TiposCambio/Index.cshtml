@@ -1,0 +1,23 @@
+﻿@model IEnumerable<TipoCambio>
+<div class="d-flex justify-content-between mb-4">
+    <h2>Tasas de Cambio</h2>
+    <a asp-action="Create" class="btn btn-primary">+ Actualizar Tasa</a>
+</div>
+
+<table class="table table-striped shadow-sm">
+    <thead class="table-dark">
+        <tr><th>De (Origen)</th><th>A (Destino)</th><th>Tasa de Conversión</th><th>Última Actualización</th><th>Acción</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td class="fw-bold">@item.MonedaOrigen</td>
+                <td class="fw-bold">@item.MonedaDestino</td>
+                <td class="text-primary fw-bold">@item.Tasa.ToString("N4")</td>
+                <td>@item.FechaActualizacion.ToString("dd/MM/yyyy HH:mm")</td>
+                <td><a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Eliminar</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

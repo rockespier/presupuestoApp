@@ -1,0 +1,50 @@
+﻿@model PresupuestoFamiliarApp.ViewModels.TransferenciaViewModel
+
+<h2>🔄 Nueva Transferencia</h2>
+<hr />
+
+<form asp-action="Create" class="card p-4 shadow-sm bg-light mb-5" style="max-width: 600px;">
+    <div asp-validation-summary="ModelOnly" class="text-danger fw-bold mb-3"></div>
+
+    <div class="row mb-3">
+        <div class="col-md-6 form-group">
+            <label asp-for="CuentaOrigenId" class="control-label fw-bold text-danger">De la Cuenta (Origen)</label>
+            <select asp-for="CuentaOrigenId" class="form-select border-danger" asp-items="ViewBag.Cuentas" required>
+                <option value="">-- Selecciona origen --</option>
+            </select>
+        </div>
+        <div class="col-md-6 form-group">
+            <label asp-for="CuentaDestinoId" class="control-label fw-bold text-success">A la Cuenta (Destino)</label>
+            <select asp-for="CuentaDestinoId" class="form-select border-success" asp-items="ViewBag.Cuentas" required>
+                <option value="">-- Selecciona destino --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group mb-3 row">
+        <div class="col-md-7">
+            <label asp-for="Monto" class="control-label fw-bold">Monto a Transferir</label>
+            <input asp-for="Monto" type="number" step="0.01" class="form-control text-primary fw-bold form-control-lg" required />
+        </div>
+        <div class="col-md-5">
+            <label asp-for="MonedaTransferencia" class="control-label fw-bold">Moneda</label>
+            <select asp-for="MonedaTransferencia" class="form-select form-select-lg bg-white" asp-items="Html.GetEnumSelectList<Moneda>()"></select>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6 form-group">
+            <label asp-for="Fecha" class="control-label fw-bold">Fecha</label>
+            <input asp-for="Fecha" type="date" class="form-control" required />
+        </div>
+        <div class="col-md-6 form-group">
+            <label asp-for="Descripcion" class="control-label fw-bold">Motivo (Opcional)</label>
+            <input asp-for="Descripcion" class="form-control" />
+        </div>
+    </div>
+
+    <div class="form-group mt-2">
+        <button type="submit" class="btn btn-primary fw-bold px-4">Efectuar Transferencia</button>
+        <a asp-action="Index" asp-controller="Home" class="btn btn-secondary px-4 ms-2">Cancelar</a>
+    </div>
+</form>

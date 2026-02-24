@@ -1,0 +1,18 @@
+﻿@model TipoCambio
+<h2>Registrar / Actualizar Tasa de Cambio</h2>
+<hr />
+<form asp-action="Create" class="card p-4 shadow-sm" style="max-width: 500px;">
+    <div class="form-group mb-3">
+        <label class="fw-bold">Moneda de Origen (Ej: Dólares)</label>
+        <select asp-for="MonedaOrigen" class="form-select" asp-items="Html.GetEnumSelectList<Moneda>()"></select>
+    </div>
+    <div class="form-group mb-3">
+        <label class="fw-bold">Moneda de Destino (Moneda de tu Espacio)</label>
+        <select asp-for="MonedaDestino" class="form-select" asp-items="Html.GetEnumSelectList<Moneda>()"></select>
+    </div>
+    <div class="form-group mb-4">
+        <label asp-for="Tasa" class="fw-bold">Tasa (A cuánto equivale 1 unidad del Origen)</label>
+        <input asp-for="Tasa" type="number" step="0.0001" class="form-control" placeholder="Ej: 3.75" required />
+    </div>
+    <button type="submit" class="btn btn-success">Guardar Tasa</button>
+</form>

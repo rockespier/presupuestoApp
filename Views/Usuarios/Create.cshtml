@@ -1,0 +1,46 @@
+﻿@model PresupuestoFamiliarApp.Models.Usuario
+
+<h2>Crear Nuevo Usuario</h2>
+<hr />
+<form asp-action="Create" class="card p-4 shadow-sm bg-light" style="max-width: 500px;">
+    <div asp-validation-summary="ModelOnly" class="text-danger fw-bold mb-3"></div>
+
+    <div class="form-group mb-3">
+        <label asp-for="NombreUsuario" class="fw-bold">Nombre de Usuario (Login)</label>
+        <input asp-for="NombreUsuario" class="form-control" required />
+        <span asp-validation-for="NombreUsuario" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="fw-bold">Contraseña</label>
+        <input type="password" name="PasswordPlain" class="form-control" required />
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Rol" class="fw-bold">Rol en el sistema</label>
+        <select asp-for="Rol" class="form-select">
+            <option value="Usuario">Usuario Normal (Solo su presupuesto)</option>
+            <option value="Administrador">Administrador (Control Total)</option>
+        </select>
+    </div>
+
+    <div class="form-group mb-4 p-3 border rounded bg-white shadow-sm">
+        <label class="fw-bold mb-2">¿A qué presupuestos (Espacios) tendrá acceso?</label>
+        <div class="row">
+            @foreach (var espacio in ViewBag.Espacios)
+            {
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="espaciosSeleccionados" value="@espacio.Id" id="espacio_@espacio.Id">
+                        <label class="form-check-label fw-bold text-primary" for="espacio_@espacio.Id">
+                            @espacio.Nombre
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+        <small class="text-muted d-block mt-2">Nota: Si es Administrador, tendrá acceso a todo sin importar lo que marques.</small>
+    </div>
+
+    <button type="submit" class="btn btn-primary fw-bold">Guardar Usuario</button>
+</form>

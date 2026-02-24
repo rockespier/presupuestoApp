@@ -1,0 +1,11 @@
+﻿@model CategoriaGasto
+<h2 class="text-danger">Eliminar Categoría</h2>
+<div class="alert alert-warning">
+    <p>¿Estás seguro de eliminar la categoría <strong>@Model.Nombre</strong>?</p>
+    <p>Nota: Los gastos anteriores que usaban esta categoría perderán su etiqueta, pero el dinero seguirá restado de tus cuentas.</p>
+</div>
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Eliminar Categoría</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+</form>

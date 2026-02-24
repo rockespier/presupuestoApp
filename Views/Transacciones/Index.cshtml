@@ -1,0 +1,192 @@
+﻿@model IEnumerable<Transaccion> // Cambia por tu namespace si es necesario
+
+@{
+    ViewData["Title"] = "Historial de Movimientos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Historial de Movimientos</h2>
+    <div class="d-flex gap-2">
+        <a asp-action="DescargarPlantilla" class="btn btn-outline-success fw-bold">
+            📥 Descargar Plantilla Excel
+        </a>
+
+        <form asp-action="ImportarExcel" enctype="multipart/form-data" method="post" class="d-flex align-items-center">
+            <input type="file" name="archivoExcel" id="archivoExcel" accept=".xlsx" class="d-none" onchange="this.form.submit()" />
+            <button type="button" class="btn btn-success fw-bold" onclick="document.getElementById('archivoExcel').click()">
+                📤 Importar Datos
+            </button>
+        </form>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">+ Nuevo Movimiento</a>
+</div>
+<form method="get" asp-action="Index" class="card p-3 mb-4 shadow-sm bg-light border-0">
+    <div class="row g-2 align-items-end">
+
+        <div class="col-md-2">
+            <label class="fw-bold text-muted mb-1" style="font-size: 0.85rem;">Mes</label>
+            <select name="mes" class="form-select border-primary">
+                <option value="">Todos</option>
+                <option value="1" selected="@(ViewBag.MesSeleccionado == 1 ? "selected" : null)">Enero</option>
+                <option value="2" selected="@(ViewBag.MesSeleccionado == 2 ? "selected" : null)">Febrero</option>
+                <option value="3" selected="@(ViewBag.MesSeleccionado == 3 ? "selected" : null)">Marzo</option>
+                <option value="4" selected="@(ViewBag.MesSeleccionado == 4 ? "selected" : null)">Abril</option>
+                <option value="5" selected="@(ViewBag.MesSeleccionado == 5 ? "selected" : null)">Mayo</option>
+                <option value="6" selected="@(ViewBag.MesSeleccionado == 6 ? "selected" : null)">Junio</option>
+                <option value="7" selected="@(ViewBag.MesSeleccionado == 7 ? "selected" : null)">Julio</option>
+                <option value="8" selected="@(ViewBag.MesSeleccionado == 8 ? "selected" : null)">Agosto</option>
+                <option value="9" selected="@(ViewBag.MesSeleccionado == 9 ? "selected" : null)">Septiembre</option>
+                <option value="10" selected="@(ViewBag.MesSeleccionado == 10 ? "selected" : null)">Octubre</option>
+                <option value="11" selected="@(ViewBag.MesSeleccionado == 11 ? "selected" : null)">Noviembre</option>
+                <option value="12" selected="@(ViewBag.MesSeleccionado == 12 ? "selected" : null)">Diciembre</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="fw-bold text-muted mb-1" style="font-size: 0.85rem;">Año</label>
+            <select name="anio" class="form-select border-primary">
+                <option value="">Todos</option>
+                @for (int i = DateTime.Now.Year - 3; i <= DateTime.Now.Year + 1; i++)
+                {
+                    <option value="@i" selected="@(ViewBag.AnioSeleccionado == i ? "selected" : null)">@i</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label class="fw-bold text-muted mb-1" style="font-size: 0.85rem;">Tipo</label>
+            <select name="tipo" class="form-select border-primary">
+                <option value="">Todos</option>
+                <option value="Ingreso" selected="@(ViewBag.TipoSeleccionado?.ToString() == "Ingreso" ? "selected" : null)">Ingreso</option>
+                <option value="Egreso" selected="@(ViewBag.TipoSeleccionado?.ToString() == "Egreso" ? "selected" : null)">Gasto (Egreso)</option>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="fw-bold text-muted mb-1" style="font-size: 0.85rem;">Categoría</label>
+            <select name="categoriaId" class="form-select border-primary" asp-items="ViewBag.Categorias">
+                <option value="">Todas las categorías</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-bold">🔍 Filtrar</button>
+            <a asp-action="Index" class="btn btn-outline-secondary" title="Limpiar filtros">✖</a>
+        </div>
+
+    </div>
+</form>
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-success shadow-sm border-0">
+            <div class="card-body py-3">
+                <h6 class="card-title mb-1 fw-bold text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">Total Ingresos (Filtrados)</h6>
+                <h3 class="mb-0">+ @ViewBag.SimboloMoneda @ViewBag.TotalIngresos.ToString("N2")</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger shadow-sm border-0">
+            <div class="card-body py-3">
+                <h6 class="card-title mb-1 fw-bold text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">Total Gastos (Filtrados)</h6>
+                <h3 class="mb-0">- @ViewBag.SimboloMoneda @ViewBag.TotalEgresos.ToString("N2")</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-primary shadow-sm border-0">
+            <div class="card-body py-3">
+                <h6 class="card-title mb-1 fw-bold text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">Balance / Neto</h6>
+                <h3 class="mb-0">@ViewBag.SimboloMoneda @ViewBag.BalanceTotal.ToString("N2")</h3>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>
+                    <a class="text-white text-decoration-none" asp-action="Index"
+                       asp-route-sortOrder="@ViewBag.FechaSortParm"
+                       asp-route-mes="@ViewBag.MesSeleccionado" asp-route-anio="@ViewBag.AnioSeleccionado"
+                       asp-route-tipo="@ViewBag.TipoSeleccionado" asp-route-categoriaId="@ViewBag.CategoriaSeleccionada">
+                        Fecha ↕
+                    </a>
+                </th>
+                <th>
+                    <a class="text-white text-decoration-none" asp-action="Index"
+                       asp-route-sortOrder="@ViewBag.TipoSortParm"
+                       asp-route-mes="@ViewBag.MesSeleccionado" asp-route-anio="@ViewBag.AnioSeleccionado"
+                       asp-route-tipo="@ViewBag.TipoSeleccionado" asp-route-categoriaId="@ViewBag.CategoriaSeleccionada">
+                        Tipo ↕
+                    </a>
+                </th>
+                <th>
+                    <a class="text-white text-decoration-none" asp-action="Index"
+                       asp-route-sortOrder="@ViewBag.DescSortParm"
+                       asp-route-mes="@ViewBag.MesSeleccionado" asp-route-anio="@ViewBag.AnioSeleccionado"
+                       asp-route-tipo="@ViewBag.TipoSeleccionado" asp-route-categoriaId="@ViewBag.CategoriaSeleccionada">
+                        Descripción ↕
+                    </a>
+                </th>
+                <th>
+                    <a class="text-white text-decoration-none" asp-action="Index"
+                       asp-route-sortOrder="@ViewBag.CuentaSortParm"
+                       asp-route-mes="@ViewBag.MesSeleccionado" asp-route-anio="@ViewBag.AnioSeleccionado"
+                       asp-route-tipo="@ViewBag.TipoSeleccionado" asp-route-categoriaId="@ViewBag.CategoriaSeleccionada">
+                        Cuenta ↕
+                    </a>
+                </th>
+                <th>
+                    <a class="text-white text-decoration-none" asp-action="Index"
+                       asp-route-sortOrder="@ViewBag.CatSortParm"
+                       asp-route-mes="@ViewBag.MesSeleccionado" asp-route-anio="@ViewBag.AnioSeleccionado"
+                       asp-route-tipo="@ViewBag.TipoSeleccionado" asp-route-categoriaId="@ViewBag.CategoriaSeleccionada">
+                        Categoría ↕
+                    </a>
+                </th>
+                <th>
+                    <a class="text-white text-decoration-none" asp-action="Index"
+                       asp-route-sortOrder="@ViewBag.MontoSortParm"
+                       asp-route-mes="@ViewBag.MesSeleccionado" asp-route-anio="@ViewBag.AnioSeleccionado"
+                       asp-route-tipo="@ViewBag.TipoSeleccionado" asp-route-categoriaId="@ViewBag.CategoriaSeleccionada">
+                        Monto ↕
+                    </a>
+                </th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        @if (item.Tipo == TipoTransaccion.Ingreso)
+                        {
+                            <span class="badge bg-success">Ingreso</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Gasto</span>
+                        }
+                    </td>
+                    <td>@item.Descripcion</td>
+                    <td>@item.Cuenta?.Nombre</td>
+                    <td>@(item.Categoria?.Nombre ?? "N/A")</td>
+                    <td class="fw-bold @(item.Tipo == TipoTransaccion.Ingreso ? "text-success" : "text-danger")">
+                        @(item.Tipo == TipoTransaccion.Ingreso ? "+" : "-") € @item.Monto.ToString("N2")
+                    </td>
+                    <td>
+                        @if (!item.EsTransferencia)
+                        {
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                        }
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
