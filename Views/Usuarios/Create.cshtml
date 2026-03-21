@@ -1,46 +1,134 @@
 ﻿@model PresupuestoFamiliarApp.Models.Usuario
 
-<h2>Crear Nuevo Usuario</h2>
-<hr />
-<form asp-action="Create" class="card p-4 shadow-sm bg-light" style="max-width: 500px;">
-    <div asp-validation-summary="ModelOnly" class="text-danger fw-bold mb-3"></div>
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
 
-    <div class="form-group mb-3">
-        <label asp-for="NombreUsuario" class="fw-bold">Nombre de Usuario (Login)</label>
-        <input asp-for="NombreUsuario" class="form-control" required />
-        <span asp-validation-for="NombreUsuario" class="text-danger"></span>
-    </div>
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Crear Nuevo Usuario</h2>
+    <p class="text-slate-600 dark:text-slate-400">Registra un nuevo usuario en el sistema</p>
+</div>
 
-    <div class="form-group mb-3">
-        <label class="fw-bold">Contraseña</label>
-        <input type="password" name="PasswordPlain" class="form-control" required />
-    </div>
-
-    <div class="form-group mb-3">
-        <label asp-for="Rol" class="fw-bold">Rol en el sistema</label>
-        <select asp-for="Rol" class="form-select">
-            <option value="Usuario">Usuario Normal (Solo su presupuesto)</option>
-            <option value="Administrador">Administrador (Control Total)</option>
-        </select>
-    </div>
-
-    <div class="form-group mb-4 p-3 border rounded bg-white shadow-sm">
-        <label class="fw-bold mb-2">¿A qué presupuestos (Espacios) tendrá acceso?</label>
-        <div class="row">
-            @foreach (var espacio in ViewBag.Espacios)
-            {
-                <div class="col-md-6">
-                    <div class="form-check form-switch mb-2">
-                        <input class="form-check-input" type="checkbox" name="espaciosSeleccionados" value="@espacio.Id" id="espacio_@espacio.Id">
-                        <label class="form-check-label fw-bold text-primary" for="espacio_@espacio.Id">
-                            @espacio.Nombre
-                        </label>
-                    </div>
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="Create" class="space-y-6">
+            <!-- Validation Summary -->
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
                 </div>
-            }
-        </div>
-        <small class="text-muted d-block mt-2">Nota: Si es Administrador, tendrá acceso a todo sin importar lo que marques.</small>
+            </div>
+
+            <!-- Nombre de Usuario -->
+            <div>
+                <label asp-for="NombreUsuario" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-user mr-2 text-primary-500"></i>Nombre de Usuario (Login)
+                </label>
+                <input asp-for="NombreUsuario" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej: juanperez, maria.lopez..." 
+                       required />
+                <span asp-validation-for="NombreUsuario" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Contraseña -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-lock mr-2 text-primary-500"></i>Contraseña
+                </label>
+                <input type="password" 
+                       name="PasswordPlain" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Mínimo 6 caracteres"
+                       required />
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label asp-for="Email" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-envelope mr-2 text-primary-500"></i>Correo Electrónico
+                </label>
+                <input asp-for="Email" 
+                       type="email"
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="usuario@ejemplo.com"
+                       required />
+                <span asp-validation-for="Email" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Rol -->
+            <div>
+                <label asp-for="Rol" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-shield mr-2 text-primary-500"></i>Rol en el Sistema
+                </label>
+                <select asp-for="Rol" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none">
+                    <option value="Usuario">Usuario Normal (Solo espacios asignados)</option>
+                    <option value="Administrador">Administrador (Control Total)</option>
+                </select>
+            </div>
+
+            <!-- Espacios -->
+            <div class="bg-slate-50 dark:bg-slate-700/50 border-2 border-slate-200 dark:border-slate-600 rounded-xl p-6">
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">
+                    <i class="fa fa-home mr-2 text-primary-500"></i>¿A qué Espacios tendrá acceso?
+                </label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    @foreach (var espacio in ViewBag.Espacios)
+                    {
+                        <label class="flex items-center p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900/20 transition">
+                            <input class="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" 
+                                   type="checkbox" 
+                                   name="espaciosSeleccionados" 
+                                   value="@espacio.Id" 
+                                   id="espacio_@espacio.Id">
+                            <span class="ml-3 font-semibold text-slate-700 dark:text-slate-200">
+                                @espacio.Nombre
+                            </span>
+                        </label>
+                    }
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Los Administradores tienen acceso a todos los espacios automáticamente
+                </p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
+                <button type="submit" 
+                        class="flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i class="fa fa-save"></i>
+                    Guardar Usuario
+                </button>
+                <a asp-action="Index" 
+                   class="flex-1 sm:flex-initial px-6 py-3.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-center flex items-center justify-center gap-2">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
     </div>
 
-    <button type="submit" class="btn btn-primary fw-bold">Guardar Usuario</button>
-</form>
+    <!-- Info Section -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+        <div class="flex items-start gap-4">
+            <div class="text-3xl">💡</div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">Sobre Roles y Permisos</h4>
+                <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                    <li><strong>Usuario Normal:</strong> Solo puede ver y gestionar los espacios asignados</li>
+                    <li><strong>Administrador:</strong> Acceso completo a todos los espacios y configuraciones del sistema</li>
+                    <li>Los espacios seleccionados solo aplican para usuarios normales</li>
+                    <li>Puedes editar permisos en cualquier momento</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

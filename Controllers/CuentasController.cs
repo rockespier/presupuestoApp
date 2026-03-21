@@ -64,13 +64,33 @@ namespace PresupuestoFamiliarApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Nombre,SaldoActual,EsCredito,MonedaCuenta")] Cuenta cuenta)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Nombre,SaldoActual,EsCredito,MonedaCuenta")] Cuenta cuenta)
         {
             if (id != cuenta.Id) return NotFound();
+
+            // Obtener la cuenta original para preservar el EspacioId
+            var cuentaOriginal = await _context.Cuentas.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+            if (cuentaOriginal == null) return NotFound();
+
+            // Preservar el EspacioId original
+            cuenta.EspacioId = cuentaOriginal.EspacioId;
+
+            ModelState.Remove("Espacio");
+
             if (ModelState.IsValid)
             {
-                _context.Update(cuenta);
-                await _context.SaveChangesAsync();
+                try
+                {
+                    _context.Update(cuenta);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!await CuentaExists(cuenta.Id))
+                        return NotFound();
+                    else
+                        throw;
+                }
                 return RedirectToAction(nameof(Index));
             }
             return View(cuenta);
@@ -97,5 +117,11 @@ namespace PresupuestoFamiliarApp.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
+        private async Task<bool> CuentaExists(int id)
+        {
+            return await _context.Cuentas.AnyAsync(e => e.Id == id);
+        }
+
     }
 }

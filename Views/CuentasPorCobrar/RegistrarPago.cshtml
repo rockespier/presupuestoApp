@@ -1,0 +1,118 @@
+﻿@model PresupuestoFamiliarApp.Models.CuentaPorCobrar
+
+@{
+    ViewData["Title"] = "Registrar Pago";
+    var simboloMoneda = ViewBag.SimboloMoneda ?? "S/";
+}
+
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+        <span class="text-green-500">💰</span> Registrar Pago
+    </h2>
+    <p class="text-slate-600 dark:text-slate-400">Registra el cobro de esta deuda</p>
+</div>
+
+<div class="max-w-xl mx-auto">
+    <!-- Info Card -->
+    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 rounded-xl border-2 border-blue-200 dark:border-blue-800 p-6 mb-6">
+        <h4 class="font-bold text-blue-900 dark:text-blue-300 mb-3 flex items-center gap-2">
+            <i class="fa fa-info-circle"></i>
+            Información de la Deuda
+        </h4>
+        <div class="space-y-2 text-blue-800 dark:text-blue-200">
+            <p class="flex items-center justify-between">
+                <span class="font-medium">Deudor:</span>
+                <span class="font-bold">@Model.Deudor.Nombre</span>
+            </p>
+            <p class="flex items-center justify-between">
+                <span class="font-medium">Concepto:</span>
+                <span class="font-bold">@Model.Concepto</span>
+            </p>
+            <div class="pt-2 border-t border-blue-200 dark:border-blue-700">
+                <p class="flex items-center justify-between">
+                    <span class="font-medium">Saldo Pendiente:</span>
+                    <span class="text-2xl font-bold text-red-600 dark:text-red-400">
+                        @simboloMoneda @Model.SaldoPendiente.ToString("N2")
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="RegistrarPago" method="post" class="space-y-6">
+            <input type="hidden" name="id" value="@Model.Id" />
+
+            <!-- Monto a Pagar -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-money mr-2 text-green-500"></i>Monto a Pagar
+                </label>
+                <div class="flex items-center gap-2">
+                    <span class="px-4 py-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold rounded-lg border-2 border-green-200 dark:border-green-800">
+                        @simboloMoneda
+                    </span>
+                    <input type="number" 
+                           name="montoPago" 
+                           step="0.01" 
+                           max="@Model.SaldoPendiente" 
+                           value="@Model.SaldoPendiente"
+                           class="flex-1 px-4 py-3 border-2 border-green-200 dark:border-green-700 rounded-xl bg-white dark:bg-slate-700 text-green-700 dark:text-green-300 text-2xl font-bold focus:border-green-500 focus:ring-4 focus:ring-green-100 transition outline-none" 
+                           required />
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                    <i class="fa fa-info-circle"></i>
+                    Puedes registrar pagos parciales si no paga el monto completo
+                </p>
+            </div>
+
+            <!-- Cuenta Destino -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-university mr-2 text-primary-500"></i>¿A dónde ingresa el dinero?
+                </label>
+                <select name="cuentaDestinoId" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CuentasDestino" 
+                        required>
+                    <option value="">-- Selecciona una cuenta --</option>
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Elige la cuenta donde se depositará el pago (Efectivo, Banco, etc.)
+                </p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
+                <button type="submit" 
+                        class="flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i class="fa fa-check"></i>
+                    Confirmar y Guardar Ingreso
+                </button>
+                <a asp-action="Detalle" asp-route-id="@Model.DeudorId" 
+                   class="flex-1 sm:flex-initial px-6 py-3.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-center flex items-center justify-center gap-2">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Section -->
+    <div class="mt-6 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-lg p-6">
+        <div class="flex items-start gap-4">
+            <div class="text-3xl">✅</div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-green-900 dark:text-green-300 mb-2">Al Registrar el Pago</h4>
+                <ul class="list-disc list-inside text-green-800 dark:text-green-200 text-sm space-y-1">
+                    <li>El saldo de la cuenta seleccionada se incrementará automáticamente</li>
+                    <li>Se registrará como un ingreso en tu historial de transacciones</li>
+                    <li>Si pagas el total, la deuda se marcará como completada</li>
+                    <li>Si es pago parcial, el saldo pendiente se actualizará</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

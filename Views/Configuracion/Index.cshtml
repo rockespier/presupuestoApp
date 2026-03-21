@@ -1,0 +1,166 @@
+﻿@model Usuario
+
+@{
+    ViewData["Title"] = "Configuración de Usuario";
+}
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+            <i class="fa fa-cog text-primary-500"></i> Configuración de Usuario
+        </h2>
+        <p class="text-slate-600 dark:text-slate-400">Personaliza tus preferencias y ajustes de la cuenta</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Sidebar with User Info -->
+        <div class="lg:col-span-1">
+            <div class="bg-gradient-to-br from-primary-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                <div class="text-center mb-4">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl font-bold mb-3">
+                        @Model.NombreUsuario.Substring(0, 1).ToUpper()
+                    </div>
+                    <h3 class="text-xl font-bold">@Model.NombreUsuario</h3>
+                    @if (!string.IsNullOrEmpty(Model.Email))
+                    {
+                        <p class="text-primary-100 text-sm mt-1">@Model.Email</p>
+                    }
+                </div>
+                
+                <div class="border-t border-white/20 pt-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-primary-100 text-sm">Rol:</span>
+                        @if (Model.Rol == "Administrador")
+                        {
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-red-500 text-white">
+                                <i class="fa fa-shield"></i>
+                                @Model.Rol
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-green-500 text-white">
+                                <i class="fa fa-user"></i>
+                                @Model.Rol
+                            </span>
+                        }
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span class="text-primary-100 text-sm">Moneda:</span>
+                        <span class="font-semibold">
+                            @(Model.MonedaPreferida == Moneda.Dolares ? "💵 USD" : 
+                              Model.MonedaPreferida == Moneda.Euros ? "🇪🇺 EUR" : "🇵🇪 PEN")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Success Message -->
+            @if (TempData["Exito"] != null)
+            {
+                <div class="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-lg p-4">
+                    <div class="flex items-center gap-3 text-green-700 dark:text-green-400">
+                        <i class="fa fa-check-circle text-xl"></i>
+                        <p class="font-medium">@TempData["Exito"]</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Currency Preferences Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="font-bold text-slate-800 dark:text-white text-lg flex items-center gap-2">
+                        <i class="fa fa-money text-green-500"></i>
+                        Preferencias de Moneda
+                    </h3>
+                </div>
+                
+                <div class="p-6">
+                    <form asp-action="ActualizarMonedaPreferida" method="post" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                                Moneda Preferida por Defecto
+                            </label>
+                            
+                            <div class="space-y-3">
+                                <!-- Soles Option -->
+                                <label class="flex items-center p-4 border-2 @(Model.MonedaPreferida == Moneda.Soles ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-slate-200 dark:border-slate-700") rounded-xl cursor-pointer hover:border-primary-400 transition">
+                                    <input type="radio" name="monedaPreferida" value="0" 
+                                           class="w-5 h-5 text-primary-600 focus:ring-primary-500" 
+                                           @(Model.MonedaPreferida == Moneda.Soles ? "checked" : "") />
+                                    <div class="ml-4 flex items-center gap-3 flex-1">
+                                        <span class="text-3xl">🇵🇪</span>
+                                        <div>
+                                            <p class="font-bold text-slate-800 dark:text-white">Soles Peruanos</p>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400">S/ - PEN</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                
+                                <!-- Dólares Option -->
+                                <label class="flex items-center p-4 border-2 @(Model.MonedaPreferida == Moneda.Dolares ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-slate-200 dark:border-slate-700") rounded-xl cursor-pointer hover:border-primary-400 transition">
+                                    <input type="radio" name="monedaPreferida" value="1" 
+                                           class="w-5 h-5 text-primary-600 focus:ring-primary-500" 
+                                           @(Model.MonedaPreferida == Moneda.Dolares ? "checked" : "") />
+                                    <div class="ml-4 flex items-center gap-3 flex-1">
+                                        <span class="text-3xl">💵</span>
+                                        <div>
+                                            <p class="font-bold text-slate-800 dark:text-white">Dólares Americanos</p>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400">$ - USD</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                
+                                <!-- Euros Option -->
+                                <label class="flex items-center p-4 border-2 @(Model.MonedaPreferida == Moneda.Euros ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-slate-200 dark:border-slate-700") rounded-xl cursor-pointer hover:border-primary-400 transition">
+                                    <input type="radio" name="monedaPreferida" value="2" 
+                                           class="w-5 h-5 text-primary-600 focus:ring-primary-500" 
+                                           @(Model.MonedaPreferida == Moneda.Euros ? "checked" : "") />
+                                    <div class="ml-4 flex items-center gap-3 flex-1">
+                                        <span class="text-3xl">🇪🇺</span>
+                                        <div>
+                                            <p class="font-bold text-slate-800 dark:text-white">Euros</p>
+                                            <p class="text-sm text-slate-600 dark:text-slate-400">€ - EUR</p>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3 flex items-start gap-2">
+                                <i class="fa fa-info-circle mt-0.5"></i>
+                                <span>Esta moneda se usará por defecto al crear nuevas categorías de gasto y transacciones.</span>
+                            </p>
+                        </div>
+                        
+                        <button type="submit" 
+                                class="w-full py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                            <i class="fa fa-save"></i>
+                            Guardar Preferencias
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+                <div class="flex items-start gap-4">
+                    <div class="text-3xl">💡</div>
+                    <div class="flex-1">
+                        <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">Sobre las Preferencias de Moneda</h4>
+                        <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                            <li>Tu moneda preferida se aplicará automáticamente al crear nuevas categorías</li>
+                            <li>Puedes cambiar la moneda de cada categoría individualmente después de crearla</li>
+                            <li>Cada espacio puede tener su propia moneda principal independiente</li>
+                            <li>Los tipos de cambio se pueden configurar para conversiones automáticas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

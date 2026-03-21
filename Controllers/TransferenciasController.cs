@@ -16,22 +16,38 @@ namespace PresupuestoFamiliarApp.Controllers
         public TransferenciasController(PresupuestoContext context) { _context = context; }
 
         // GET: Mostrar el formulario vacío (con soporte para pre-seleccionar destino)
-        public IActionResult Create(int? destinoId)
+        public async Task<IActionResult> Create(int? destinoId)
         {
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
 
             var cuentas = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
             ViewBag.Cuentas = new SelectList(cuentas, "Id", "Nombre");
 
-            // Creamos el modelo vacío
-            var modelo = new TransferenciaViewModel();
+            // NUEVO: Obtener la moneda preferida del usuario
+            var nombreUsuario = User.Identity?.Name;
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario);
+            var espacioActivo = await _context.Espacios.FindAsync(espacioActualId);
+
+            // Si el usuario tiene moneda preferida, la usamos; si no, usamos la del espacio
+            var monedaPorDefecto = usuario?.MonedaPreferida ?? espacioActivo?.MonedaPrincipal ?? Moneda.Soles;
+
+            // Creamos el modelo con la moneda por defecto
+            var modelo = new TransferenciaViewModel
+            {
+                MonedaTransferencia = monedaPorDefecto,
+                Fecha = DateTime.Now
+            };
 
             // Si recibimos un ID por la URL (ej: al hacer clic en "Pagar Tarjeta")
             if (destinoId.HasValue)
             {
                 modelo.CuentaDestinoId = destinoId.Value;
-                modelo.Descripcion = "Pago de Tarjeta de Crédito"; // Pre-llenamos la descripción también
+                modelo.Descripcion = "Pago de Tarjeta de Crédito";
             }
+
+            // Establecer el símbolo de moneda
+            ViewBag.SimboloMoneda = monedaPorDefecto == Moneda.Dolares ? "$" :
+                                   (monedaPorDefecto == Moneda.Euros ? "€" : "S/");
 
             return View(modelo);
         }
@@ -118,10 +134,17 @@ namespace PresupuestoFamiliarApp.Controllers
                 _context.AddRange(egreso, ingreso);
                 await _context.SaveChangesAsync();
 
+                TempData["Exito"] = "Transferencia realizada exitosamente.";
                 return RedirectToAction("Index", "Home");
             }
 
             ViewBag.Cuentas = new SelectList(_context.Cuentas.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre");
+
+            // Establecer el símbolo para cuando hay error
+            var simbolo = modelo.MonedaTransferencia == Moneda.Dolares ? "$" :
+                         (modelo.MonedaTransferencia == Moneda.Euros ? "€" : "S/");
+            ViewBag.SimboloMoneda = simbolo;
+
             return View(modelo);
         }
 
@@ -130,6 +153,11 @@ namespace PresupuestoFamiliarApp.Controllers
         {
             ModelState.AddModelError("", $"Falta tasa de cambio de {origen} a {destino}. Ve a la sección 'Tipos de Cambio' y regístrala.");
             ViewBag.Cuentas = new SelectList(_context.Cuentas.Where(c => c.EspacioId == espacioId), "Id", "Nombre");
+
+            var simbolo = modelo.MonedaTransferencia == Moneda.Dolares ? "$" :
+                         (modelo.MonedaTransferencia == Moneda.Euros ? "€" : "S/");
+            ViewBag.SimboloMoneda = simbolo;
+
             return View(modelo);
         }
     }

@@ -1,7 +1,8 @@
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using PresupuestoFamiliarApp.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +28,24 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromDays(7); // La sesión dura 7 días
     });
 
+
+// ...
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddHangfireServer();
+// ...
+
+builder.Services.AddScoped<AutomatizacionService>();
+builder.Services.AddScoped<EmailService>();
+
 var app = builder.Build();
+
+// Activar el panel de control de Hangfire (solo accesible para ti)
+app.UseHangfireDashboard("/hangfire");
 
 
 // Configure the HTTP request pipeline.
@@ -53,3 +71,17 @@ app.MapControllerRoute(
 
 
 app.Run();
+
+using (var scope = app.Services.CreateScope())
+{
+    var service = scope.ServiceProvider.GetRequiredService<AutomatizacionService>();
+
+    // "0 0 * * *" es formato Cron para: Todos los días a medianoche
+    RecurringJob.AddOrUpdate("ProcesarFijosDiarios", () => service.ProcesarMovimientosFijos(), "1 0 * * *");
+
+    // 1. Reporte Mensual por Correo (Día 1 de cada mes a las 8:00 AM)
+    RecurringJob.AddOrUpdate("ResumenMensual", () =>  service.EnviarResumenMensual(),"0 8 1 * *");
+
+    // "0 1 1 * *" significa: Minuto 0, Hora 1 (AM), Día 1 de cada mes.
+    RecurringJob.AddOrUpdate("GenerarAlquileres", () => service.GenerarDeudasMensuales(), "0 1 1 * *");
+}

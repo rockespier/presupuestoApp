@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace PresupuestoFamiliarApp.Controllers
 {
@@ -20,7 +21,6 @@ namespace PresupuestoFamiliarApp.Controllers
         public async Task<IActionResult> Index()
         {
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
-            // BUSCAR LA MONEDA DEL ESPACIO
             var espacioActivo = await _context.Espacios.FindAsync(espacioActualId);
             ViewBag.SimboloMoneda = espacioActivo?.MonedaPrincipal == Moneda.Dolares ? "$" : (espacioActivo?.MonedaPrincipal == Moneda.Euros ? "€" : "S/");
 
@@ -31,21 +31,34 @@ namespace PresupuestoFamiliarApp.Controllers
             return View(categorias);
         }
 
-        // GET & POST: Crear Categoría
         // GET: Mostrar formulario de crear
         public async Task<IActionResult> Create()
         {
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
             var espacioActivo = await _context.Espacios.FindAsync(espacioActualId);
-            ViewBag.SimboloMoneda = espacioActivo?.MonedaPrincipal == Moneda.Dolares ? "$" : (espacioActivo?.MonedaPrincipal == Moneda.Euros ? "€" : "S/");
 
-            return View();
+            // Obtener la moneda preferida del usuario
+            var nombreUsuario = User.Identity?.Name;
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario);
+
+            // Si el usuario tiene moneda preferida, la usamos; si no, usamos la del espacio
+            var monedaPorDefecto = usuario?.MonedaPreferida ?? espacioActivo?.MonedaPrincipal ?? Moneda.Soles;
+
+            // CAMBIO IMPORTANTE: Crear una instancia del modelo con el valor por defecto
+            var nuevaCategoria = new CategoriaGasto
+            {
+                MonedaCategoria = monedaPorDefecto
+            };
+
+            ViewBag.SimboloMoneda = monedaPorDefecto == Moneda.Dolares ? "$" : (monedaPorDefecto == Moneda.Euros ? "€" : "S/");
+
+            return View(nuevaCategoria);
         }
 
-        // POST: Crear Categoría (ASIGNANDO EL ESPACIO)
+        // POST: Crear Categoría (ASIGNANDO EL ESPACIO Y MONEDA)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Nombre,Subcategoria,PresupuestoMensual")] CategoriaGasto categoria)
+        public async Task<IActionResult> Create([Bind("Nombre,Subcategoria,PresupuestoMensual,MonedaCategoria")] CategoriaGasto categoria)
         {
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
 
@@ -56,8 +69,11 @@ namespace PresupuestoFamiliarApp.Controllers
             {
                 _context.Add(categoria);
                 await _context.SaveChangesAsync();
+                TempData["Exito"] = "Categoría creada exitosamente.";
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.MonedaPorDefecto = categoria.MonedaCategoria;
             return View(categoria);
         }
 
@@ -93,7 +109,11 @@ namespace PresupuestoFamiliarApp.Controllers
 
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
             var espacioActivo = await _context.Espacios.FindAsync(espacioActualId);
-            ViewBag.SimboloMoneda = espacioActivo?.MonedaPrincipal == Moneda.Dolares ? "$" : (espacioActivo?.MonedaPrincipal == Moneda.Euros ? "€" : "S/");
+
+            // El símbolo se calcula basado en la moneda de la categoría actual
+            var simbolo = categoria.MonedaCategoria == Moneda.Dolares ? "$" :
+                          (categoria.MonedaCategoria == Moneda.Euros ? "€" : "S/");
+            ViewBag.SimboloMoneda = simbolo;
 
             return View(categoria);
         }
@@ -101,9 +121,11 @@ namespace PresupuestoFamiliarApp.Controllers
         // POST: Guarda los cambios del presupuesto en la base de datos
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Nombre,Subcategoria,PresupuestoMensual")] CategoriaGasto categoria)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Nombre,Subcategoria,PresupuestoMensual,MonedaCategoria,EspacioId")] CategoriaGasto categoria)
         {
             if (id != categoria.Id) return NotFound();
+
+            ModelState.Remove("Espacio");
 
             if (ModelState.IsValid)
             {
@@ -111,6 +133,7 @@ namespace PresupuestoFamiliarApp.Controllers
                 {
                     _context.Update(categoria);
                     await _context.SaveChangesAsync();
+                    TempData["Exito"] = "Categoría actualizada exitosamente.";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -119,7 +142,6 @@ namespace PresupuestoFamiliarApp.Controllers
                     else
                         throw;
                 }
-                // Si todo sale bien, regresamos a la lista de presupuestos
                 return RedirectToAction(nameof(Index));
             }
             return View(categoria);

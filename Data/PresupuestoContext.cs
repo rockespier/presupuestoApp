@@ -21,10 +21,8 @@ namespace PresupuestoFamiliarApp.Data
         public DbSet<MovimientoFijo> MovimientosFijos { get; set; }
 
         public DbSet<Usuario> Usuarios { get; set; }
-
-        // Añade este using arriba del todo si no lo tienes:
-        // using Microsoft.EntityFrameworkCore.Diagnostics;
-
+                        public DbSet<Deudor> Deudores { get; set; }
+        public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // Esto le dice a EF Core que deje de tratar esta advertencia como un error fatal
@@ -93,6 +91,7 @@ namespace PresupuestoFamiliarApp.Data
                 {
                     Id = 1,
                     NombreUsuario = "admin",
+                    Email = "rtres.info@gmail.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin123"),
                     Rol = "Administrador"
                 }

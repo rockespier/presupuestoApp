@@ -1,44 +1,186 @@
 ﻿@model IEnumerable<PresupuestoFamiliarApp.Models.Usuario>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Gestión de Usuarios</h2>
-    <a asp-action="Create" class="btn btn-primary">+ Nuevo Usuario</a>
+@{
+    ViewData["Title"] = "Usuarios";
+}
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Gestión de Usuarios</h2>
+        <p class="text-slate-600 dark:text-slate-400">Administra los usuarios y sus permisos en el sistema</p>
+    </div>
+    <a asp-action="Create" 
+       class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg hover:shadow-xl">
+        <span class="text-xl font-bold">+</span> Nuevo Usuario
+    </a>
 </div>
 
-<table class="table table-hover bg-white shadow-sm rounded">
-    <thead class="table-dark">
-        <tr>
-            <th>Usuario</th>
-            <th>Rol</th>
-            <th>Presupuesto (Espacio) Asignado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td class="fw-bold">@item.NombreUsuario</td>
-                <td><span class="badge @(item.Rol == "Administrador" ? "bg-danger" : "bg-success")">@item.Rol</span></td>
-                <td>
-                    @if (item.Rol == "Administrador")
-                    {
-                        <span class="text-muted fst-italic">Todos (Acceso Total)</span>
-                    }
-                    else
-                    {
-                        @string.Join(", ", item.Espacios.Select(e => e.Nombre))
-                    }
-                </td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning fw-bold">Editar</a>
+<!-- Summary Cards -->
+@{
+    var totalUsuarios = Model.Count();
+    var administradores = Model.Count(u => u.Rol == "Administrador");
+    var usuariosNormales = Model.Count(u => u.Rol != "Administrador");
+}
 
-                    @if (item.Id != 1 && item.NombreUsuario.ToLower() != "admin")
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-primary-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-primary-100">Total Usuarios</p>
+            <span class="text-3xl">👥</span>
+        </div>
+        <p class="text-4xl font-bold">@totalUsuarios</p>
+        <p class="text-primary-100 text-sm mt-1">Registrados</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-red-100">Administradores</p>
+            <span class="text-3xl">⚡</span>
+        </div>
+        <p class="text-4xl font-bold">@administradores</p>
+        <p class="text-red-100 text-sm mt-1">Con acceso total</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-green-100">Usuarios Estándar</p>
+            <span class="text-3xl">👤</span>
+        </div>
+        <p class="text-4xl font-bold">@usuariosNormales</p>
+        <p class="text-green-100 text-sm mt-1">Con acceso limitado</p>
+    </div>
+</div>
+
+<!-- Users Table -->
+@if (Model.Any())
+{
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-slate-800 dark:bg-slate-900 text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Usuario</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Rol</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Espacios Asignados</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    @foreach (var item in Model)
                     {
-                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger fw-bold ms-1" onclick="return confirm('¿Estás seguro de que deseas eliminar a este usuario permanentemente?');">Eliminar</a>
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br @(item.Rol == "Administrador" ? "from-red-400 to-rose-500" : "from-green-400 to-emerald-500") flex items-center justify-center text-white font-bold text-lg">
+                                        @item.NombreUsuario.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-800 dark:text-white">@item.NombreUsuario</p>
+                                        @if (!string.IsNullOrEmpty(item.Email))
+                                        {
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">@item.Email</p>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                @if (item.Rol == "Administrador")
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                        <i class="fa fa-shield"></i>
+                                        Administrador
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                        <i class="fa fa-user"></i>
+                                        Usuario
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-4 py-4">
+                                @if (item.Rol == "Administrador")
+                                {
+                                    <div class="flex items-center gap-2">
+                                        <i class="fa fa-infinity text-primary-500"></i>
+                                        <span class="text-sm text-slate-600 dark:text-slate-400 italic">Todos (Acceso Total)</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach (var espacio in item.Espacios)
+                                        {
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                                                @espacio.Nombre
+                                            </span>
+                                        }
+                                        @if (!item.Espacios.Any())
+                                        {
+                                            <span class="text-sm text-slate-500 dark:text-slate-400 italic">Sin espacios asignados</span>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" 
+                                       class="px-3 py-1.5 text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition">
+                                        📝Editar
+                                    </a>
+                                    
+                                    @if (item.Id != 1 && item.NombreUsuario.ToLower() != "admin")
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@item.Id" 
+                                           onclick="return confirm('¿Estás seguro de que deseas eliminar a este usuario permanentemente?');"
+                                           class="px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                                            🗑Eliminar
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="px-3 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-lg cursor-not-allowed">
+                                            🔒Protegido
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
                     }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Empty State -->
+    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl p-12 text-center">
+        <div class="text-6xl mb-4">👥</div>
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">No hay usuarios registrados</h3>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">
+            Crea usuarios para compartir espacios y colaborar en la gestión financiera
+        </p>
+        <a asp-action="Create" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg">
+            <span class="text-xl font-bold">+</span> Crear Primer Usuario
+        </a>
+    </div>
+}
+
+<!-- Info Section -->
+<div class="mt-8 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg p-6">
+    <div class="flex items-start gap-4">
+        <div class="text-3xl">⚠️</div>
+        <div class="flex-1">
+            <h4 class="text-lg font-bold text-amber-900 dark:text-amber-300 mb-2">Importante sobre Roles</h4>
+            <ul class="list-disc list-inside text-amber-800 dark:text-amber-200 text-sm space-y-2">
+                <li><strong>Administradores:</strong> Tienen acceso completo a todos los espacios, pueden crear usuarios, gestionar configuraciones y ver todas las transacciones del sistema.</li>
+                <li><strong>Usuarios Estándar:</strong> Solo tienen acceso a los espacios que se les asignen explícitamente. No pueden ver ni modificar otros espacios.</li>
+                <li><strong>El usuario Admin principal</strong> está protegido y no puede ser eliminado para garantizar que siempre haya un administrador del sistema.</li>
+            </ul>
+        </div>
+    </div>
+</div>

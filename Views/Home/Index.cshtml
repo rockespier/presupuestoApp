@@ -2,233 +2,559 @@
 
 @{
     ViewData["Title"] = "Panel Principal";
-
-    // Un truco rápido para mostrar el nombre del mes seleccionado bonito
     var fechaSeleccionada = new DateTime(Model.AnioSeleccionado, Model.MesSeleccionado, 1);
     string mesFormateado = fechaSeleccionada.ToString("MMMM yyyy");
-    // Ponemos la primera letra en mayúscula
     mesFormateado = char.ToUpper(mesFormateado[0]) + mesFormateado.Substring(1);
 }
 
-<div class="text-center mb-5">
-    <h1 class="display-5 fw-bold text-primary">Mi Presupuesto</h1>
+<!-- Hero Section -->
+<section class="bg-gradient-to-br from-primary-500 via-blue-600 to-purple-600 rounded-2xl lg:rounded-3xl shadow-2xl p-6 lg:p-8 mb-6 lg:mb-8 text-white">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <!-- Left Content -->
+        <div class="flex-1">
+            <p class="text-primary-100 text-xs lg:text-sm font-semibold uppercase tracking-wider mb-2">Resumen mensual</p>
+            <h1 class="text-3xl lg:text-5xl font-bold mb-3">Mis Presupuestos</h1>
+            <p class="text-primary-50 text-base lg:text-lg mb-6 max-w-2xl">
+                Resumen financiero de <strong class="text-white">@mesFormateado</strong> para que tomes decisiones con claridad.
+            </p>
+            
+            <!-- Filter Form - Mejorado -->
+            <form asp-action="Index" method="get" class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 mb-4">
+                <div class="flex flex-col lg:flex-row gap-3 items-start lg:items-end">
+                    <div class="flex-1 min-w-0">
+                        <label class="block text-xs font-semibold mb-1.5 text-white/90">Mes</label>
+                        <select name="mes" asp-for="MesSeleccionado" class="w-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-medium rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition">
+                            <option value="1" class="text-slate-800">Enero</option>
+                            <option value="2" class="text-slate-800">Febrero</option>
+                            <option value="3" class="text-slate-800">Marzo</option>
+                            <option value="4" class="text-slate-800">Abril</option>
+                            <option value="5" class="text-slate-800">Mayo</option>
+                            <option value="6" class="text-slate-800">Junio</option>
+                            <option value="7" class="text-slate-800">Julio</option>
+                            <option value="8" class="text-slate-800">Agosto</option>
+                            <option value="9" class="text-slate-800">Septiembre</option>
+                            <option value="10" class="text-slate-800">Octubre</option>
+                            <option value="11" class="text-slate-800">Noviembre</option>
+                            <option value="12" class="text-slate-800">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <label class="block text-xs font-semibold mb-1.5 text-white/90">Año</label>
+                        <select name="anio" asp-for="AnioSeleccionado" class="w-full bg-white/20 backdrop-blur-sm border border-white/30 text-white font-medium rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition">
+                            @for (int i = DateTime.Now.Year - 2; i <= DateTime.Now.Year + 1; i++)
+                            {
+                                <option value="@i" class="text-slate-800">@i</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full lg:w-auto bg-white text-primary-600 font-bold px-8 py-2.5 rounded-xl hover:bg-primary-50 transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        Buscar
+                    </button>
+                </div>
+            </form>
 
-    <form asp-action="Index" method="get" class="d-flex justify-content-center align-items-center gap-2 mt-3 p-3 bg-light rounded-pill shadow-sm mx-auto" style="max-width: 600px;">
-        <label class="fw-bold ms-3">Ver periodo:</label>
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-3">
+                <a asp-controller="Transacciones" asp-action="Create" 
+                   class="inline-flex items-center gap-2 bg-white text-primary-600 font-semibold px-5 py-2.5 rounded-full hover:bg-primary-50 transition shadow-md">
+                    <span class="text-xl font-bold">+</span> Registrar movimiento
+                </a>
+                <a asp-controller="Transferencias" asp-action="Create" 
+                   class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-full hover:bg-white/30 transition border border-white/30">
+                    <i class="fa fa-exchange" aria-hidden="true"></i> Transferir
+                </a>
+            </div>
+        </div>
 
-        <select name="mes" asp-for="MesSeleccionado" class="form-select w-auto border-primary">
-            <option value="1">Enero</option>
-            <option value="2">Febrero</option>
-            <option value="3">Marzo</option>
-            <option value="4">Abril</option>
-            <option value="5">Mayo</option>
-            <option value="6">Junio</option>
-            <option value="7">Julio</option>
-            <option value="8">Agosto</option>
-            <option value="9">Septiembre</option>
-            <option value="10">Octubre</option>
-            <option value="11">Noviembre</option>
-            <option value="12">Diciembre</option>
-        </select>
+        <!-- Right Stats -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-4 lg:w-80">
+            <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/15 transition">
+                <p class="text-primary-100 text-xs font-semibold uppercase tracking-wider mb-1">Ingresos del mes</p>
+                <p class="text-2xl lg:text-3xl font-bold mb-1">@Model.SimboloMonedaEspacio @Model.TotalIngresosMes.ToString("N2")</p>
+                <p class="text-primary-100 text-xs">Flujo esperado</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/15 transition">
+                <p class="text-primary-100 text-xs font-semibold uppercase tracking-wider mb-1">Gastos totales</p>
+                <p class="text-2xl lg:text-3xl font-bold mb-1">@Model.SimboloMonedaEspacio @Model.TotalEgresosMes.ToString("N2")</p>
+                <p class="text-primary-100 text-xs">Incluye pagos fijos</p>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/15 transition">
+                <p class="text-primary-100 text-xs font-semibold uppercase tracking-wider mb-1">Ahorro proyectado</p>
+                <p class="text-2xl lg:text-3xl font-bold mb-1">@Model.SimboloMonedaEspacio @Model.AhorroMes.ToString("N2")</p>
+                <p class="text-primary-100 text-xs">Después de todos los egresos</p>
+            </div>
+        </div>
+    </div>
+</section>
 
-        <select name="anio" asp-for="AnioSeleccionado" class="form-select w-auto border-primary">
-            @* Generamos los años dinámicamente: desde 2 años atrás hasta 1 año en el futuro *@
-            @for (int i = DateTime.Now.Year - 2; i <= DateTime.Now.Year + 1; i++)
-            {
-                <option value="@i">@i</option>
-            }
-        </select>
+@if (User.IsInRole("Administrador"))
+{
+    <div class="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-lg p-6 mb-6">
+        <h5 class="text-white font-bold text-lg mb-2">🚀 Panel de Pruebas (Solo Admin)</h5>
+        <p class="text-white/90 mb-4">Haz clic para generar el reporte de gastos del mes pasado y enviarlo a tu correo.</p>
+        <a asp-controller="Usuarios" asp-action="ProbarReporteMensual" 
+           class="inline-flex items-center gap-2 bg-white text-orange-600 font-semibold px-5 py-2.5 rounded-full hover:bg-orange-50 transition shadow-md">
+            📧 Enviar Mi Reporte de Prueba
+        </a>
+    </div>
+}
 
-        <button type="submit" class="btn btn-primary rounded-pill px-4 me-2">Buscar</button>
-    </form>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-slate-800 dark:text-white text-lg">📊 Balance del Mensual (@Model.AnioSeleccionado)</h3>
+        </div>
+        <div class="p-6">
+            <canvas id="chartBalance"></canvas>
+        </div>
+    </div>
 
-    <p class="lead mt-3 text-muted">Resumen financiero de <strong class="text-dark">@mesFormateado</strong></p>
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-slate-800 dark:text-white text-lg">🍕 Gastos por Categoría</h3>
+        </div>
+        <div class="p-6" style="max-height: 300px; position: relative;">
+            <canvas id="chartCategorias"></canvas>
+        </div>
+    </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <h5 class="card-title fw-bold text-muted">Distribución de Gastos</h5>
-                <div style="height: 300px; display: flex; justify-content: center;">
-                    <canvas id="pieChart"></canvas>
+<!-- Calendar and Debtors Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-slate-800 dark:text-white text-lg">📅 Calendario de Cobros y Vencimientos</h3>
+        </div>
+        <div class="p-4 lg:p-6">
+            <!-- Calendario con estilos mejorados -->
+            <div id="calendario" class="mb-4 rounded-lg overflow-hidden"></div>
+
+            <!-- Payment Summary -->
+            <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-4">
+                <h6 class="font-bold text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2">
+                    <i class="fa fa-clock"></i> Pendiente para fin de mes
+                </h6>
+                <div class="grid grid-cols-2 gap-4 mb-3">
+                    <div class="text-center border-r border-blue-200 dark:border-blue-700">
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            @Model.SimboloMonedaEspacio @ViewBag.TotalCobrosPendientes?.ToString("N2")
+                        </p>
+                        <p class="text-xs text-slate-600 dark:text-slate-400">
+                            A cobrar (@ViewBag.CantidadCobrosPendientes)
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-red-600 dark:text-red-400">
+                            @Model.SimboloMonedaEspacio @ViewBag.TotalPagosFijosPendientes?.ToString("N2")
+                        </p>
+                        <p class="text-xs text-slate-600 dark:text-slate-400">
+                            A pagar (@ViewBag.CantidadPagosFijosPendientes)
+                        </p>
+                    </div>
+                </div>
+                @{
+                    decimal balanceRestante = (ViewBag.TotalCobrosPendientes ?? 0) - (ViewBag.TotalPagosFijosPendientes ?? 0);
+                    string colorBalance = balanceRestante >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
+                }
+                <div class="border-t border-blue-200 dark:border-blue-700 pt-3 text-center">
+                    <p class="text-xs text-slate-600 dark:text-slate-400 mb-1">Balance estimado:</p>
+                    <p class="text-2xl font-bold @colorBalance">
+                        @Model.SimboloMonedaEspacio @balanceRestante.ToString("N2")
+                    </p>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <h5 class="card-title fw-bold text-muted">Balance Mensual (@Model.AnioSeleccionado)</h5>
-                <div style="height: 300px;">
-                    <canvas id="barChart"></canvas>
-                </div>
-            </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-slate-800 dark:text-white text-lg">⚠️ Cuentas por Cobrar</h3>
+        </div>
+        <div class="p-6" style="max-height: 300px; position: relative;">
+            <canvas id="chartDeudores"></canvas>
         </div>
     </div>
 </div>
 
-<h3 class="mb-3">Saldos Actuales</h3>
-<div class="row mb-4">
-    <div class="col-md-8">
-        <h3 class="mb-3 text-success">Dinero Disponible</h3>
-        <div class="row">
+<!-- Account Balances -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <div class="lg:col-span-2">
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <span class="text-green-500">💰</span> Dinero Disponible
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             @foreach (var cuenta in Model.CuentasDinero)
             {
-                // Calculamos el símbolo de ESTA cuenta específica
                 string simboloCuenta = cuenta.MonedaCuenta == Moneda.Dolares ? "$" : (cuenta.MonedaCuenta == Moneda.Euros ? "€" : "S/");
-
-                <div class="col-md-6 mb-3">
-                    <div class="card shadow-sm border-0 border-start border-success border-4 bg-light">
-                        <div class="card-body">
-                            <h5 class="card-title text-muted">@cuenta.Nombre</h5>
-                            <h3 class="fw-bold">@simboloCuenta @cuenta.SaldoActual.ToString("N2")</h3>
-                        </div>
-                    </div>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border-l-4 border-green-500 p-5 hover:shadow-lg transition">
+                    <p class="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">@cuenta.Nombre</p>
+                    <p class="text-3xl font-bold text-slate-800 dark:text-white">@simboloCuenta @cuenta.SaldoActual.ToString("N2")</p>
                 </div>
             }
         </div>
     </div>
 
-    <div class="col-md-4">
-        <h3 class="mb-3 text-danger">Tarjetas de Credito</h3>
-        @foreach (var tarjeta in Model.TarjetasCredito)
-        {
-            string simboloCuenta = tarjeta.MonedaCuenta == Moneda.Dolares ? "$" : (tarjeta.MonedaCuenta == Moneda.Euros ? "€" : "S/");
-
-            <div class="card shadow-sm border-0 border-start border-danger border-4 bg-light mb-3">
-                <div class="card-body">
-                    <h5 class="card-title text-muted">@tarjeta.Nombre</h5>
-                    <h3 class="fw-bold text-danger">@simboloCuenta @((tarjeta.SaldoActual * -1).ToString("N2"))</h3>
-
-                    <a asp-controller="Transferencias" asp-action="Create" asp-route-destinoId="@tarjeta.Id" class="btn btn-sm btn-outline-danger mt-2 w-100 fw-bold">💳 Pagar Tarjeta</a>
+    <div>
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <span class="text-red-500">💳</span> Tarjetas de Crédito
+        </h3>
+        <div class="space-y-4">
+            @foreach (var tarjeta in Model.TarjetasCredito)
+            {
+                string simboloCuenta = tarjeta.MonedaCuenta == Moneda.Dolares ? "$" : (tarjeta.MonedaCuenta == Moneda.Euros ? "€" : "S/");
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border-l-4 border-red-500 p-5 hover:shadow-lg transition">
+                    <p class="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">@tarjeta.Nombre</p>
+                    <p class="text-3xl font-bold text-red-600 dark:text-red-400 mb-3">@simboloCuenta @((tarjeta.SaldoActual * -1).ToString("N2"))</p>
+                    <a asp-controller="Transferencias" asp-action="Create" asp-route-destinoId="@tarjeta.Id" 
+                       class="block text-center bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                        💳 Pagar Tarjeta
+                    </a>
                 </div>
-            </div>
-        }
-        
-    </div>
-</div>
-
-<hr class="my-4" />
-
-<h3 class="mb-3">Flujo de Caja del Mes</h3>
-<div class="row mb-4 text-center">
-    <div class="col-md-4">
-        <div class="card text-white bg-success mb-3 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Ingresos Totales</h5>
-                <h3>+ @Model.SimboloMonedaEspacio @Model.TotalIngresosMes.ToString("N2")</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-danger mb-3 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Gastos Totales</h5>
-                <h3>- @Model.SimboloMonedaEspacio @Model.TotalEgresosMes.ToString("N2")</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3 shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Ahorro del Mes</h5>
-                <h3>@Model.SimboloMonedaEspacio @Model.AhorroMes.ToString("N2")</h3>
-            </div>
+            }
         </div>
     </div>
 </div>
 
-<hr class="my-4" />
+<!-- Cash Flow -->
+<h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4">Flujo de Caja del Mes</h3>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white text-center">
+        <p class="text-sm font-semibold uppercase tracking-wider text-green-100 mb-2">Ingresos Totales</p>
+        <p class="text-4xl font-bold">+ @Model.SimboloMonedaEspacio @Model.TotalIngresosMes.ToString("N2")</p>
+    </div>
+    <div class="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white text-center">
+        <p class="text-sm font-semibold uppercase tracking-wider text-red-100 mb-2">Gastos Totales</p>
+        <p class="text-4xl font-bold">- @Model.SimboloMonedaEspacio @Model.TotalEgresosMes.ToString("N2")</p>
+    </div>
+    <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg p-6 text-white text-center">
+        <p class="text-sm font-semibold uppercase tracking-wider text-blue-100 mb-2">Ahorro del Mes</p>
+        <p class="text-4xl font-bold">@Model.SimboloMonedaEspacio @Model.AhorroMes.ToString("N2")</p>
+    </div>
+</div>
 
-<h3 class="mb-3">Detalle por Categoría</h3>
-<div class="row">
+<!-- Category Details -->
+<h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4">Detalle por Categoría</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
     @foreach (var cat in Model.ResumenCategorias)
     {
-        // Lógica para cambiar el color de la barra si nos pasamos del presupuesto
-        string barraColor = cat.PorcentajeConsumido >= 100 ? "bg-danger" :
-        cat.PorcentajeConsumido > 80 ? "bg-warning" : "bg-success";
+        string barraColor = cat.PorcentajeConsumido >= 100 ? "bg-red-500" :
+                           cat.PorcentajeConsumido > 80 ? "bg-amber-500" : "bg-green-500";
 
-        <div class="col-md-6 mb-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="fw-bold">@cat.Nombre</span>
-                        <span>@Model.SimboloMonedaEspacio @cat.GastoReal.ToString("N2") de € @cat.PresupuestoMensual.ToString("N2")</span>
-                    </div>
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar @barraColor" role="progressbar"
-                             style="width: @cat.PorcentajeConsumido%;"
-                             aria-valuenow="@cat.PorcentajeConsumido" aria-valuemin="0" aria-valuemax="100">
-                            @cat.PorcentajeConsumido%
-                        </div>
-                    </div>
-                    @if (cat.GastoReal > cat.PresupuestoMensual)
-                    {
-                        <small class="text-danger mt-2 d-block">¡Te has pasado del presupuesto por @Model.SimboloMonedaEspacio @((cat.GastoReal - cat.PresupuestoMensual).ToString("N2"))!</small>
-                    }
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 p-5 hover:shadow-lg transition">
+            <div class="flex justify-between items-center mb-3">
+                <span class="font-bold text-slate-800 dark:text-white">@cat.Nombre</span>
+                <span class="text-sm text-slate-600 dark:text-slate-400">
+                    @Model.SimboloMonedaEspacio @cat.GastoReal.ToString("N2") de @Model.SimboloMonedaEspacio @cat.PresupuestoMensual.ToString("N2")
+                </span>
+            </div>
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-6 overflow-hidden">
+                <div class="@barraColor h-full flex items-center justify-center text-white text-xs font-semibold rounded-full transition-all" 
+                     style="width: @Math.Min(cat.PorcentajeConsumido, 100)%;">
+                    @cat.PorcentajeConsumido%
                 </div>
             </div>
+            @if (cat.GastoReal > cat.PresupuestoMensual)
+            {
+                <p class="text-red-600 dark:text-red-400 text-sm mt-2 font-medium">
+                    ¡Te has pasado del presupuesto por @Model.SimboloMonedaEspacio @((cat.GastoReal - cat.PresupuestoMensual).ToString("N2"))!
+                </p>
+            }
         </div>
     }
 </div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 
     <script>
-        // --- 1. GRÁFICO CIRCULAR (GASTOS POR CATEGORÍA) ---
-        // Extraemos solo las categorías donde realmente gastaste dinero
-        var catLabels = @Html.Raw(Json.Serialize(Model.ResumenCategorias.Where(c => c.GastoReal > 0).Select(c => c.Nombre)));
-        var catData = @Html.Raw(Json.Serialize(Model.ResumenCategorias.Where(c => c.GastoReal > 0).Select(c => c.GastoReal)));
+        document.addEventListener('DOMContentLoaded', function() {
+            // Calendar with improved styling
+            const calendarioEl = document.getElementById('calendario');
+            const eventos = @Html.Raw(ViewBag.EventosCalendario ?? "[]");
 
-        var ctxPie = document.getElementById('pieChart').getContext('2d');
-        new Chart(ctxPie, {
-            type: 'doughnut', // 'doughnut' queda más moderno que 'pie', pero puedes cambiarlo a 'pie'
-            data: {
-                labels: catLabels,
-                datasets: [{
-                    data: catData,
-                    // Colores vibrantes para las categorías
-                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#E7E9ED', '#71B37C'],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right' }
+            const calendario = new FullCalendar.Calendar(calendarioEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                height: 'auto',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,listWeek'
+                },
+                buttonText: {
+                    today: 'Hoy',
+                    month: 'Mes',
+                    list: 'Lista'
+                },
+                events: eventos,
+                eventClick: function(info) {
+                    if (info.event.url) {
+                        window.location.href = info.event.url;
+                        info.jsEvent.preventDefault();
+                    }
+                },
+                // Custom styling
+                eventDisplay: 'block',
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: false
                 }
+            });
+
+            calendario.render();
+
+            // Charts
+            const simboloMoneda = '@Html.Raw(Model.SimboloMonedaEspacio)';
+            const ingresosAnual = @Html.Raw(ViewBag.IngresosAnual ?? "[]");
+            const gastosAnual = @Html.Raw(ViewBag.GastosAnual ?? "[]");
+            const mesesDelAnio = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const labelsCategorias = @Html.Raw(ViewBag.LabelsCategorias ?? "[]");
+            const datosCategorias = @Html.Raw(ViewBag.DatosCategorias ?? "[]");
+            const labelsDeudores = @Html.Raw(ViewBag.LabelsDeudores ?? "[]");
+            const datosDeudores = @Html.Raw(ViewBag.DatosDeudores ?? "[]");
+
+            // Balance Chart
+            const ctxBalance = document.getElementById('chartBalance');
+            if (ctxBalance) {
+                new Chart(ctxBalance.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: mesesDelAnio,
+                        datasets: [
+                            {
+                                label: 'Ingresos',
+                                data: ingresosAnual,
+                                backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                                borderRadius: 8
+                            },
+                            {
+                                label: 'Gastos',
+                                data: gastosAnual,
+                                backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                                borderRadius: 8
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let valor = context.raw || 0;
+                                        return context.dataset.label + ': ' + simboloMoneda + ' ' + valor.toLocaleString('es-ES', {minimumFractionDigits: 2});
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return simboloMoneda + ' ' + value.toLocaleString('es-ES');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
-        });
 
-        // --- 2. GRÁFICO DE BARRAS (BALANCE ANUAL) ---
-        var barLabels = @Html.Raw(Json.Serialize(Model.BalancesHistoricos.Select(b => b.MesNombre)));
-        var barData = @Html.Raw(Json.Serialize(Model.BalancesHistoricos.Select(b => b.Balance)));
+            // Category Chart
+            const ctxCategorias = document.getElementById('chartCategorias');
+            if (ctxCategorias) {
+                new Chart(ctxCategorias.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsCategorias,
+                        datasets: [{
+                            data: datosCategorias,
+                            backgroundColor: [
+                                '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b',
+                                '#10b981', '#6366f1', '#ef4444', '#14b8a6'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: { position: 'right' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let valor = context.raw || 0;
+                                        return simboloMoneda + ' ' + valor.toLocaleString('es-ES', {minimumFractionDigits: 2});
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
 
-        // Creamos un arreglo de colores: Verde si el balance es positivo, Rojo si es negativo
-        var barColors = barData.map(value => value >= 0 ? 'rgba(25, 135, 84, 0.8)' : 'rgba(220, 53, 69, 0.8)');
-
-        var ctxBar = document.getElementById('barChart').getContext('2d');
-        new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: barLabels,
-                datasets: [{
-                    label: 'Balance Neto',
-                    data: barData,
-                    backgroundColor: barColors,
-                    borderRadius: 4 // Bordes redondeados modernos
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false } // Ocultamos la leyenda porque es obvio
-                }
+            // Debtors Chart
+            const ctxDeudores = document.getElementById('chartDeudores');
+            if (ctxDeudores) {
+                new Chart(ctxDeudores.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labelsDeudores,
+                        datasets: [{
+                            label: 'Deuda Pendiente',
+                            data: datosDeudores,
+                            backgroundColor: 'rgba(249, 115, 22, 0.8)',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let valor = context.raw || 0;
+                                        return 'Deuda: ' + simboloMoneda + ' ' + valor.toLocaleString('es-ES', {minimumFractionDigits: 2});
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return simboloMoneda + ' ' + value.toLocaleString('es-ES');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
         });
     </script>
+
+    @if (ViewBag.MostrarTour == true)
+    {
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css" />
+        <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const driver = window.driver.js.driver;
+
+                const tourObj = driver({
+                    showProgress: true,
+                    allowClose: true,
+                    nextBtnText: 'Siguiente 👉',
+                    prevBtnText: 'Anterior',
+                    doneBtnText: '¡Comenzar! 🚀',
+
+                    steps: [
+                        {
+                            popover: {
+                                title: '¡Bienvenido a Mis Presupuestos App! 🎉',
+                                description: 'Vamos a dar un paseo rápido para enseñarte cómo tomar el control de tus finanzas.'
+                            }
+                        },
+                        {
+                            element: '#menu-dashboard',
+                            popover: {
+                                title: 'Dashboard',
+                                description: 'Tu panel principal con resúmenes y gráficos.',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#menu-cuentas',
+                            popover: {
+                                title: 'Registra tus Cuentas',
+                                description: 'Aquí puedes agregar tus cuentas bancarias, tu dinero en efectivo o tus tarjetas de credito.',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#menu-transacciones',
+                            popover: {
+                                title: 'Registra tu Dinero',
+                                description: 'Usa esta pestaña para anotar todo lo que ganas y lo que gastas. ¡Es el motor del sistema!',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#menu-presupuestos',
+                            popover: {
+                                title: 'Tus presupuestos',
+                                description: 'Usa esta pestaña para establecer un presupuesto por cada categoria.',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#menu-suscripciones',
+                            popover: {
+                                title: 'Suscripciones',
+                                description: 'Registra aquí todos los gastos o ingresos que se repiten cada mes.',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#menu-deudores',
+                            popover: {
+                                title: 'Deudores',
+                                description: 'Registra cuanto y quienes te estan debiendo.',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#menu-transferir',
+                            popover: {
+                                title: 'Transferencias',
+                                description: 'No pierdas de vista ningun egreso de tu cuenta. Registra tambien las transferencias.',
+                                side: "bottom", align: 'start'
+                            }
+                        },
+                        {
+                            element: '#chartBalance',
+                            popover: {
+                                title: 'Dashboard Automático',
+                                description: 'A medida que registres movimientos, estos gráficos cobrarán vida mágicamente.',
+                                side: "top", align: 'center'
+                            }
+                        },
+                        {
+                            element: '#chartDeudores',
+                            popover: {
+                                title: 'Seguimiento de deudores',
+                                description: 'Puedes hacer seguimiento de tus cuentas por cobrar.',
+                                side: "top", align: 'start'
+                            }
+                        }
+                    ],
+
+                    onDestroyStarted: () => {
+                        if (!tourObj.hasNextStep() || confirm("¿Seguro que quieres saltar el tutorial?")) {
+                            fetch('/Home/MarcarTourCompletado', { method: 'POST' });
+                            tourObj.destroy();
+                        }
+                    }
+                });
+
+                tourObj.drive();
+            });
+        </script>
+    }
 }

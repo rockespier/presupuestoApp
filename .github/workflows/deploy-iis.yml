@@ -1,0 +1,230 @@
+name: Deploy PresupuestoFamiliarApp to IIS
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  PUBLISH_PATH: './publish'
+  IIS_SITE_NAME: 'PresupuestoFamiliarApp'
+  IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
+  IIS_PHYSICAL_PATH: 'C:\Publish\PresupuestoFamiliarApp'
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted  # Usa el self-hosted runner instalado en tu servidor
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 📦 Restore dependencies
+      run: dotnet restore
+      working-directory: .
+      
+    - name: 🏗️ Build
+      run: dotnet build --configuration Release --no-restore
+      working-directory: .
+      
+    - name: 🧪 Run tests
+      run: dotnet test --no-build --verbosity normal --configuration Release
+      working-directory: .
+      continue-on-error: true  # No fallar si no hay tests configurados
+      
+    - name: 📤 Publish
+      run: dotnet publish --configuration Release --output ${{ env.PUBLISH_PATH }} --no-build
+      working-directory: .
+      
+    - name: 🛑 Stop IIS App Pool
+      shell: powershell
+      run: |
+        Import-Module WebAdministration
+        Write-Host "Stopping App Pool: ${{ env.IIS_APP_POOL }}"
+        
+        if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
+          $state = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
+          Write-Host "Current state: $state"
+          
+          if ($state -eq "Started") {
+            Stop-WebAppPool -Name "${{ env.IIS_APP_POOL }}"
+            Start-Sleep -Seconds 5
+            Write-Host "✓ App Pool stopped successfully"
+          } else {
+            Write-Host "⚠️ App Pool was already stopped"
+          }
+        } else {
+          Write-Host "⚠️ App Pool not found - will be created on first deployment"
+        }
+        
+    - name: 📁 Backup Previous Deployment
+      shell: powershell
+      run: |
+        $destination = "${{ env.IIS_PHYSICAL_PATH }}"
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $backupPath = "C:\Backups\PresupuestoApp_$timestamp"
+        
+        if (Test-Path $destination) {
+          Write-Host "Creating backup at: $backupPath"
+          New-Item -Path "C:\Backups" -ItemType Directory -Force | Out-Null
+          Copy-Item -Path $destination -Destination $backupPath -Recurse -Force
+          Write-Host "✓ Backup created successfully"
+          
+          # Limpiar backups antiguos (más de 7 días)
+          $oldBackups = Get-ChildItem "C:\Backups" | Where-Object {
+            $_.Name -like "PresupuestoApp_*" -and $_.CreationTime -lt (Get-Date).AddDays(-7)
+          }
+          
+          if ($oldBackups) {
+            $oldBackups | Remove-Item -Recurse -Force
+            Write-Host "✓ Cleaned up $($oldBackups.Count) old backup(s)"
+          }
+        } else {
+          Write-Host "⚠️ No previous deployment found, skipping backup"
+        }
+        
+    - name: 🚀 Deploy to IIS
+      shell: powershell
+      run: |
+        $source = "${{ env.PUBLISH_PATH }}\*"
+        $destination = "${{ env.IIS_PHYSICAL_PATH }}"
+        
+        Write-Host "Deploying from: ${{ env.PUBLISH_PATH }}"
+        Write-Host "Deploying to: $destination"
+        
+        # Crear directorio si no existe
+        New-Item -Path $destination -ItemType Directory -Force | Out-Null
+        
+        # Copiar archivos nuevos
+        Write-Host "Copying files..."
+        Copy-Item -Path $source -Destination $destination -Recurse -Force
+        Write-Host "✓ Files deployed successfully"
+        
+        # Verificar que los archivos críticos existen
+        $criticalFiles = @(
+          "PresupuestoFamiliarApp.dll",
+          "web.config",
+          "appsettings.json"
+        )
+        
+        foreach ($file in $criticalFiles) {
+          $filePath = Join-Path $destination $file
+          if (Test-Path $filePath) {
+            Write-Host "✓ $file exists"
+          } else {
+            Write-Host "❌ WARNING: $file not found!"
+          }
+        }
+        
+    - name: 🔐 Set Permissions
+      shell: powershell
+      run: |
+        $path = "${{ env.IIS_PHYSICAL_PATH }}"
+        
+        Write-Host "Setting permissions on: $path"
+        
+        # Dar permisos al Application Pool Identity
+        icacls $path /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)RX" /T | Out-Null
+        Write-Host "✓ Read/Execute permissions set for App Pool"
+        
+        # Dar permisos de escritura a wwwroot (para archivos estáticos, uploads)
+        $wwwrootPath = Join-Path $path "wwwroot"
+        if (Test-Path $wwwrootPath) {
+          icacls $wwwrootPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
+          Write-Host "✓ Write permissions set for wwwroot"
+        }
+        
+        # Crear y dar permisos a carpeta de logs
+        $logsPath = Join-Path $path "logs"
+        New-Item -Path $logsPath -ItemType Directory -Force | Out-Null
+        icacls $logsPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
+        Write-Host "✓ Logs directory created and permissions set"
+        
+    - name: 🔄 Start IIS App Pool
+      shell: powershell
+      run: |
+        Import-Module WebAdministration
+        Write-Host "Starting App Pool: ${{ env.IIS_APP_POOL }}"
+        
+        if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
+          Start-WebAppPool -Name "${{ env.IIS_APP_POOL }}"
+          Start-Sleep -Seconds 5
+          
+          $state = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
+          Write-Host "App Pool state: $state"
+          
+          if ($state -eq "Started") {
+            Write-Host "✓ App Pool started successfully"
+          } else {
+            Write-Host "⚠️ App Pool state is: $state"
+          }
+        } else {
+          Write-Host "⚠️ App Pool not found - please configure IIS manually"
+        }
+        
+    - name: ✅ Verify Deployment
+      shell: powershell
+      run: |
+        Import-Module WebAdministration
+        
+        # Verificar estado del App Pool
+        if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
+          $poolState = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
+          Write-Host "App Pool State: $poolState"
+          
+          if ($poolState -ne "Started") {
+            throw "❌ App Pool failed to start properly!"
+          }
+        }
+        
+        # Verificar estado del sitio web
+        if (Test-Path "IIS:\Sites\${{ env.IIS_SITE_NAME }}") {
+          $siteState = (Get-WebsiteState -Name "${{ env.IIS_SITE_NAME }}").Value
+          Write-Host "Website State: $siteState"
+        }
+        
+        # Intentar hacer una petición HTTP
+        Write-Host ""
+        Write-Host "Testing HTTP response..."
+        try {
+          $response = Invoke-WebRequest -Uri "http://localhost" -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
+          
+          if ($response.StatusCode -eq 200) {
+            Write-Host "✓ Application is responding (HTTP 200 OK)"
+          } else {
+            Write-Host "⚠️ Application returned status: $($response.StatusCode)"
+          }
+        } catch {
+          Write-Host "⚠️ Could not reach application: $($_.Exception.Message)"
+          Write-Host "   The application may still be starting up..."
+        }
+        
+        Write-Host ""
+        Write-Host "🎉 Deployment completed successfully!"
+        Write-Host "================================================"
+        Write-Host "Deployed to: ${{ env.IIS_PHYSICAL_PATH }}"
+        Write-Host "App Pool: ${{ env.IIS_APP_POOL }}"
+        Write-Host "Website: ${{ env.IIS_SITE_NAME }}"
+        Write-Host "================================================"
+        
+    - name: 📊 Deployment Summary
+      if: always()
+      shell: powershell
+      run: |
+        Write-Host ""
+        Write-Host "============================================"
+        Write-Host "       DEPLOYMENT SUMMARY"
+        Write-Host "============================================"
+        Write-Host "Repository: ${{ github.repository }}"
+        Write-Host "Branch: ${{ github.ref_name }}"
+        Write-Host "Commit: ${{ github.sha }}"
+        Write-Host "Commit Message: ${{ github.event.head_commit.message }}"
+        Write-Host "Triggered by: ${{ github.actor }}"
+        Write-Host "Deployment Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+        Write-Host "============================================"

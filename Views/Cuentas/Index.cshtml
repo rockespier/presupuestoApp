@@ -1,24 +1,219 @@
 ﻿@model IEnumerable<Cuenta>
-<h2>Mis Cuentas y Tarjetas</h2>
-<a asp-action="Create" class="btn btn-primary mb-3">+ Nueva Cuenta</a>
-<table class="table table-striped">
-    <thead class="table-dark">
-        <tr><th>Nombre</th><th>Saldo / Deuda</th><th>Tipo</th><th>Acciones</th></tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Nombre</td>
-                <td class="fw-bold @(item.EsCredito ? "text-danger" : "text-success")">
-                    @item.MonedaCuenta @item.SaldoActual.ToString("N2")
-                </td>
-                <td>@(item.EsCredito ? "💳 Tarjeta de Crédito" : "💵 Cuenta de Dinero")</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Eliminar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+
+@{
+    ViewData["Title"] = "Mis Cuentas";
+}
+
+<!-- Header Section -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Mis Cuentas y Tarjetas</h2>
+        <p class="text-slate-600 dark:text-slate-400">Administra todas tus cuentas bancarias y tarjetas de crédito</p>
+    </div>
+    <a asp-action="Create" 
+       class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg hover:shadow-xl">
+        <span class="text-xl font-bold">+</span> Nueva Cuenta
+    </a>
+</div>
+
+<!-- Summary Cards -->
+@{
+    var cuentasDinero = Model.Where(c => !c.EsCredito).ToList();
+    var tarjetasCredito = Model.Where(c => c.EsCredito).ToList();
+    
+    // Agrupar por moneda
+    var totalPorMoneda = Model
+        .Where(c => !c.EsCredito)
+        .GroupBy(c => c.MonedaCuenta)
+        .Select(g => new { Moneda = g.Key, Total = g.Sum(c => c.SaldoActual) })
+        .ToList();
+        
+    var deudaPorMoneda = Model
+        .Where(c => c.EsCredito)
+        .GroupBy(c => c.MonedaCuenta)
+        .Select(g => new { Moneda = g.Key, Total = g.Sum(c => Math.Abs(c.SaldoActual)) })
+        .ToList();
+}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-green-100">Cuentas de Dinero</p>
+            <span class="text-3xl">💰</span>
+        </div>
+        <p class="text-3xl font-bold mb-1">@cuentasDinero.Count()</p>
+        <p class="text-green-100 text-sm">Cuentas activas</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-red-100">Tarjetas de Crédito</p>
+            <span class="text-3xl">💳</span>
+        </div>
+        <p class="text-3xl font-bold mb-1">@tarjetasCredito.Count()</p>
+        <p class="text-red-100 text-sm">Tarjetas registradas</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-blue-100">Total de Cuentas</p>
+            <span class="text-3xl">📊</span>
+        </div>
+        <p class="text-3xl font-bold mb-1">@Model.Count()</p>
+        <p class="text-blue-100 text-sm">En total</p>
+    </div>
+</div>
+
+<!-- Cuentas de Dinero Section -->
+@if (cuentasDinero.Any())
+{
+    <div class="mb-8">
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <span class="text-green-500">💵</span> Cuentas de Dinero
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach (var cuenta in cuentasDinero)
+            {
+                string simbolo = cuenta.MonedaCuenta == Moneda.Dolares ? "$" : (cuenta.MonedaCuenta == Moneda.Euros ? "€" : "S/");
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border-l-4 border-green-500 hover:shadow-xl transition overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="text-lg font-bold text-slate-800 dark:text-white mb-1">@cuenta.Nombre</h4>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                    Cuenta de Dinero
+                                </span>
+                            </div>
+                            <div class="text-3xl">💰</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Saldo Actual</p>
+                            <p class="text-3xl font-bold text-green-600 dark:text-green-400">
+                                @simbolo @cuenta.SaldoActual.ToString("N2")
+                            </p>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <a asp-action="Edit" asp-route-id="@cuenta.Id" 
+                               class="flex-1 text-center px-4 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-semibold rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition">
+                                📝 Editar
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@cuenta.Id" 
+                               class="flex-1 text-center px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-semibold rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                                🗑 Eliminar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Tarjetas de Crédito Section -->
+@if (tarjetasCredito.Any())
+{
+    <div class="mb-8">
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+            <span class="text-red-500">💳</span> Tarjetas de Crédito
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach (var tarjeta in tarjetasCredito)
+            {
+                string simbolo = tarjeta.MonedaCuenta == Moneda.Dolares ? "$" : (tarjeta.MonedaCuenta == Moneda.Euros ? "€" : "S/");
+                decimal deuda = Math.Abs(tarjeta.SaldoActual);
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-md border-l-4 border-red-500 hover:shadow-xl transition overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="text-lg font-bold text-slate-800 dark:text-white mb-1">@tarjeta.Nombre</h4>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                    Tarjeta de Crédito
+                                </span>
+                            </div>
+                            <div class="text-3xl">💳</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mb-1">Deuda Actual</p>
+                            <p class="text-3xl font-bold text-red-600 dark:text-red-400">
+                                @simbolo @deuda.ToString("N2")
+                            </p>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <a asp-controller="Transferencias" asp-action="Create" asp-route-destinoId="@tarjeta.Id"
+                               class="flex-1 text-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition">
+                                💵 Pagar
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@tarjeta.Id" 
+                               class="px-4 py-2 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-semibold rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition">
+                                📝
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@tarjeta.Id" 
+                               class="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-semibold rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                                🗑
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl p-12 text-center">
+        <div class="text-6xl mb-4">🏦</div>
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">No hay cuentas registradas</h3>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">Comienza agregando tu primera cuenta bancaria o tarjeta de crédito</p>
+        <a asp-action="Create" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg">
+            <span class="text-xl font-bold">+</span> Crear Primera Cuenta
+        </a>
+    </div>
+}
+
+<!-- Balance Summary by Currency -->
+@if (totalPorMoneda.Any() || deudaPorMoneda.Any())
+{
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mt-8">
+        <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-4">📊 Resumen por Moneda</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach (var item in totalPorMoneda)
+            {
+                string simbolo = item.Moneda == Moneda.Dolares ? "$" : (item.Moneda == Moneda.Euros ? "€" : "S/");
+                var deuda = deudaPorMoneda.FirstOrDefault(d => d.Moneda == item.Moneda);
+                decimal deudaTotal = deuda?.Total ?? 0;
+                decimal neto = item.Total - deudaTotal;
+                
+                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4 border border-slate-200 dark:border-slate-600">
+                    <p class="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-2">@item.Moneda</p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-600 dark:text-slate-400">Disponible:</span>
+                            <span class="font-bold text-green-600 dark:text-green-400">@simbolo @item.Total.ToString("N2")</span>
+                        </div>
+                        @if (deudaTotal > 0)
+                        {
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-600 dark:text-slate-400">Deuda:</span>
+                                <span class="font-bold text-red-600 dark:text-red-400">@simbolo @deudaTotal.ToString("N2")</span>
+                            </div>
+                            <div class="pt-2 border-t border-slate-300 dark:border-slate-600">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Neto:</span>
+                                    <span class="font-bold text-lg @(neto >= 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400")">
+                                        @simbolo @neto.ToString("N2")
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

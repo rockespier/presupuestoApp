@@ -1,0 +1,140 @@
+{
+  "name": "Presupuesto Familiar App",
+  "short_name": "PresupuestosApp",
+  "description": "Gestiona tus finanzas personales y familiares de manera sencilla y eficiente",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "es-PE",
+  "dir": "ltr",
+  "categories": ["finance", "productivity", "business"],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard principal de la aplicación"
+    },
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Vista móvil del dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nueva Transacción",
+      "short_name": "Nueva",
+      "description": "Registrar un nuevo ingreso o gasto",
+      "url": "/Transacciones/Create",
+      "icons": [
+        {
+          "src": "/icons/shortcut-transaction.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ver Cuentas",
+      "short_name": "Cuentas",
+      "description": "Ver estado de mis cuentas",
+      "url": "/Cuentas/Index",
+      "icons": [
+        {
+          "src": "/icons/shortcut-accounts.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ver Presupuestos",
+      "short_name": "Presupuestos",
+      "description": "Revisar mis presupuestos",
+      "url": "/Categorias/Index",
+      "icons": [
+        {
+          "src": "/icons/shortcut-budget.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "share_target": {
+    "action": "/Transacciones/Create",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "descripcion",
+      "text": "nota",
+      "url": "referencia"
+    }
+  },
+  "oauth2": {
+    "client_id": "your_client_id",
+    "redirect_uri": "https://localhost:5001/Auth/Login",
+    "response_type": "code",
+    "scope": "openid profile email",
+    "prompt": "consent"
+  }
+}

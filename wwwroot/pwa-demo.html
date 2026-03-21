@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Toast de Actualización PWA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+        }
+        #update-toast {
+            transition: all 0.3s ease-out;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">
+            ?? Demo: Sistema de Notificaciones PWA
+        </h1>
+        
+        <div class="space-y-4 mb-8">
+            <p class="text-gray-600 text-center">
+                Haz clic en los botones para ver los diferentes estilos de notificaciones
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <!-- Botón Toast de Actualización -->
+            <button onclick="showUpdateToast()" class="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-xl hover:from-blue-600 hover:to-purple-700 transition shadow-lg hover:shadow-xl">
+                ?? Mostrar Toast de Actualización
+            </button>
+
+            <!-- Botón Loading Overlay -->
+            <button onclick="showLoadingOverlay()" class="px-6 py-4 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-teal-700 transition shadow-lg hover:shadow-xl">
+                ?? Mostrar Loading
+            </button>
+
+            <!-- Botón Welcome Message -->
+            <button onclick="showWelcomeMessage()" class="px-6 py-4 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-700 transition shadow-lg hover:shadow-xl">
+                ?? Mostrar Bienvenida
+            </button>
+
+            <!-- Botón Install Button -->
+            <button onclick="showInstallButton()" class="px-6 py-4 bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold rounded-xl hover:from-pink-600 hover:to-rose-700 transition shadow-lg hover:shadow-xl">
+                ?? Mostrar Botón Instalar
+            </button>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+            <h3 class="font-bold text-gray-800 mb-2">?? Código implementado:</h3>
+            <ul class="text-sm text-gray-600 space-y-1">
+                <li>? Toast de actualización con gradiente</li>
+                <li>? Loading overlay con spinner</li>
+                <li>? Mensaje de bienvenida</li>
+                <li>? Botón de instalación flotante</li>
+                <li>? Animaciones suaves (slideUp/slideDown)</li>
+                <li>? Auto-dismiss después de tiempo</li>
+            </ul>
+        </div>
+
+        <div class="text-center">
+            <button onclick="clearAll()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                ??? Limpiar Todo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Toast de actualización
+        function showUpdateToast() {
+            clearAll();
+            
+            const toast = document.createElement('div');
+            toast.id = 'update-toast';
+            toast.innerHTML = `
+                <div class="fixed bottom-6 right-6 z-[9999] bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl max-w-md" style="animation: slideUp 0.3s ease-out;">
+                    <div class="flex items-center gap-4 mb-3">
+                        <div class="text-3xl">??</div>
+                        <div class="flex-1">
+                            <p class="font-bold text-lg mb-1">¡Nueva versión disponible!</p>
+                            <p class="text-sm text-blue-100">Mejoras y correcciones incluidas</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="mockUpdate()" class="flex-1 px-4 py-2 bg-white text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition text-sm">
+                            Actualizar ahora
+                        </button>
+                        <button onclick="dismissToast()" class="px-4 py-2 text-white hover:bg-white/20 rounded-lg transition text-sm">
+                            Más tarde
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Auto-dismiss después de 60 segundos
+            setTimeout(() => {
+                dismissToast();
+            }, 60000);
+        }
+
+        // Mock de actualización
+        function mockUpdate() {
+            dismissToast();
+            showLoadingOverlay();
+            
+            setTimeout(() => {
+                const loading = document.getElementById('update-loading');
+                if (loading) loading.remove();
+                alert('? ¡Aplicación actualizada! (En producción haría reload)');
+            }, 2000);
+        }
+
+        // Cerrar toast
+        function dismissToast() {
+            const toast = document.getElementById('update-toast');
+            if (toast) {
+                toast.style.animation = 'slideDown 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+
+        // Loading overlay
+        function showLoadingOverlay() {
+            clearAll();
+            
+            const loading = document.createElement('div');
+            loading.id = 'update-loading';
+            loading.innerHTML = `
+                <div class="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                    <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm">
+                        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mx-auto mb-4"></div>
+                        <p class="text-lg font-semibold text-gray-800 mb-2">Actualizando aplicación</p>
+                        <p class="text-sm text-gray-600">Espera un momento...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loading);
+
+            // Auto-remove después de 3 segundos
+            setTimeout(() => {
+                if (loading.parentNode) loading.remove();
+            }, 3000);
+        }
+
+        // Welcome message
+        function showWelcomeMessage() {
+            clearAll();
+            
+            const notification = document.createElement('div');
+            notification.id = 'welcome-message';
+            notification.innerHTML = `
+                <div class="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl" style="animation: slideUp 0.3s ease-out;">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">??</span>
+                        <div>
+                            <p class="font-bold">¡App instalada!</p>
+                            <p class="text-sm">Ahora puedes usarla como aplicación nativa</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideDown 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        // Install button
+        function showInstallButton() {
+            clearAll();
+            
+            const button = document.createElement('button');
+            button.id = 'floating-install-button';
+            button.innerHTML = `
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                <span>Instalar App</span>
+            `;
+            button.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-full shadow-2xl hover:from-blue-600 hover:to-purple-700 transform hover:scale-110 transition duration-300';
+            button.style.animation = 'slideUp 0.3s ease-out';
+            
+            button.addEventListener('click', () => {
+                alert('?? ¡Instalando aplicación! (En producción abriría el prompt nativo)');
+            });
+            
+            document.body.appendChild(button);
+        }
+
+        // Limpiar todos los elementos
+        function clearAll() {
+            const elements = [
+                'update-toast',
+                'update-loading',
+                'welcome-message',
+                'floating-install-button'
+            ];
+            
+            elements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            });
+        }
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        showUpdateToast();
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        showLoadingOverlay();
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        showWelcomeMessage();
+                        break;
+                    case '4':
+                        e.preventDefault();
+                        showInstallButton();
+                        break;
+                    case 'c':
+                        e.preventDefault();
+                        clearAll();
+                        break;
+                }
+            }
+        });
+
+        // Info de atajos
+        console.log('%c?? Atajos de teclado:', 'font-size: 16px; font-weight: bold;');
+        console.log('Ctrl+1: Toast de actualización');
+        console.log('Ctrl+2: Loading overlay');
+        console.log('Ctrl+3: Mensaje de bienvenida');
+        console.log('Ctrl+4: Botón de instalación');
+        console.log('Ctrl+C: Limpiar todo');
+    </script>
+
+</body>
+</html>

@@ -5,24 +5,23 @@ using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
-// Asegúrate de que este namespace apunte a donde tienes tus modelos:
-// using PresupuestoFamiliarApp.Models; 
+
 
 namespace PresupuestoFamiliarApp.Controllers
 {
     [Authorize]
-    public class TransaccionesController : Controller
+    public class TransaccionesController : BaseController
     {
-        private readonly PresupuestoContext _context;
+        //private readonly PresupuestoContext _context;
 
-        // Inyectamos la base de datos
-        public TransaccionesController(PresupuestoContext context)
+        public TransaccionesController(PresupuestoContext context) : base(context) // CAMBIO: Pasar al constructor base
         {
-            _context = context;
+            // Ya no es necesario: _context = context;
         }
 
+        
         // GET: Muestra el formulario vacío con listas FILTRADAS
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             // Leer la cookie
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
@@ -39,7 +38,25 @@ namespace PresupuestoFamiliarApp.Controllers
             var tarjetasIds = cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList();
             ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(tarjetasIds);
 
-            return View();
+            // NUEVO: Obtener la moneda preferida del usuario
+            var nombreUsuario = User.Identity?.Name;
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario);
+            var espacioActivo = await _context.Espacios.FindAsync(espacioActualId);
+
+            // Si el usuario tiene moneda preferida, la usamos; si no, usamos la del espacio
+            var monedaPorDefecto = usuario?.MonedaPreferida ?? espacioActivo?.MonedaPrincipal ?? Moneda.Soles;
+
+            // Crear instancia de transacción con moneda por defecto
+            var nuevaTransaccion = new Transaccion
+            {
+                MonedaTransaccion = monedaPorDefecto,
+                Fecha = DateTime.Now
+            };
+
+            ViewBag.SimboloMoneda = monedaPorDefecto == Moneda.Dolares ? "$" :
+                                   (monedaPorDefecto == Moneda.Euros ? "€" : "S/");
+
+            return View(nuevaTransaccion);
         }
 
         // POST: Recibe y guarda los datos
@@ -62,14 +79,18 @@ namespace PresupuestoFamiliarApp.Controllers
                 transaccion.MontoOriginal = transaccion.Monto;
 
                 // 1. CÁLCULO PARA EL ESPACIO / PRESUPUESTO (Ej: Todo a Soles)
-                if (transaccion.MonedaTransaccion != espacioActual.MonedaPrincipal)
+                if (transaccion.MonedaTransaccion != cuenta.MonedaCuenta)
                 {
                     var tasaEspacio = await _context.TiposCambio.FirstOrDefaultAsync(t => t.MonedaOrigen == transaccion.MonedaTransaccion && t.MonedaDestino == espacioActual.MonedaPrincipal);
                     if (tasaEspacio == null)
                     {
                         ModelState.AddModelError("", $"ERROR: Falta tasa de cambio de {transaccion.MonedaTransaccion} a {espacioActual.MonedaPrincipal} (Para tu presupuesto).");
-                        ViewBag.CuentaId = new SelectList(_context.Cuentas.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CuentaId);
+                        // NUEVO: Recargar ViewBags necesarios (incluido TarjetasIds)
+                        var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+                        ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre", transaccion.CuentaId);
                         ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CategoriaGastoId);
+                        ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
+                        ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
                         return View(transaccion);
                     }
                     transaccion.TasaCambioUsada = tasaEspacio.Tasa;
@@ -89,16 +110,36 @@ namespace PresupuestoFamiliarApp.Controllers
                     if (tasaCuenta == null)
                     {
                         ModelState.AddModelError("", $"ERROR: Falta tasa de cambio de {transaccion.MonedaTransaccion} a {cuenta.MonedaCuenta} (Para actualizar tu banco).");
-                        ViewBag.CuentaId = new SelectList(_context.Cuentas.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CuentaId);
+                        // NUEVO: Recargar ViewBags necesarios (incluido TarjetasIds)
+                        var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+                        ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre", transaccion.CuentaId);
                         ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CategoriaGastoId);
+                        ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
+                        ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
                         return View(transaccion);
                     }
                     montoParaLaCuenta = Math.Round(transaccion.MontoOriginal * tasaCuenta.Tasa, 2);
                 }
                 // --- FIN LÓGICA DE CONVERSIÓN ---
 
-                if (cuenta != null)                {
-                    
+                if (cuenta != null)
+                {
+                    // NUEVA VALIDACIÓN: Verificar saldo insuficiente solo para cuentas normales (no tarjetas de crédito)
+                    if (transaccion.Tipo == TipoTransaccion.Egreso && !cuenta.EsCredito)
+                    {
+                        if (cuenta.SaldoActual < montoParaLaCuenta)
+                        {
+                            ModelState.AddModelError("", $"ERROR: Saldo insuficiente. La cuenta '{cuenta.Nombre}' tiene {cuenta.MonedaCuenta} {cuenta.SaldoActual:N2}, pero intentas gastar {cuenta.MonedaCuenta} {montoParaLaCuenta:N2}.");
+                            // NUEVO: Recargar ViewBags necesarios (incluido TarjetasIds)
+                            var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+                            ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre", transaccion.CuentaId);
+                            ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CategoriaGastoId);
+                            ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
+                            ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
+                            return View(transaccion);
+                        }
+                    }
+
                     // Si no es tarjeta de crédito o no es un egreso, forzamos a 1 cuota
                     if (!cuenta.EsCredito || transaccion.Tipo != TipoTransaccion.Egreso)
                     {
@@ -147,7 +188,10 @@ namespace PresupuestoFamiliarApp.Controllers
                                 Tipo = transaccion.Tipo,
                                 CuentaId = transaccion.CuentaId,
                                 CategoriaGastoId = transaccion.CategoriaGastoId,
-                                EsTransferencia = false
+                                EsTransferencia = false,
+                                MontoOriginal = Math.Round(transaccion.MontoOriginal / numeroCuotas, 2),
+                                MonedaTransaccion = transaccion.MonedaTransaccion,
+                                TasaCambioUsada = transaccion.TasaCambioUsada
                             };
 
                             _context.Add(nuevaTransaccion);
@@ -155,22 +199,24 @@ namespace PresupuestoFamiliarApp.Controllers
                     }
 
                     await _context.SaveChangesAsync();
+                    TempData["Exito"] = "¡Movimiento registrado con éxito!";
                     return RedirectToAction("Index", "Home");
                 }
             }
 
-            // Si hay error, recargamos la vista
-            ViewBag.CuentaId = new SelectList(_context.Cuentas, "Id", "Nombre", transaccion.CuentaId);
-            ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos, "Id", "Nombre", transaccion.CategoriaGastoId);
-
-            var tarjetasIdsError = _context.Cuentas.Where(c => c.EsCredito).Select(c => c.Id).ToList();
-            ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(tarjetasIdsError);
+            // Si hay error, recargamos la vista con todos los ViewBags necesarios
+            int espacioActId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idC) ? idC : 1;
+            var cuentasEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActId).ToList();
+            ViewBag.CuentaId = new SelectList(cuentasEspacio, "Id", "Nombre", transaccion.CuentaId);
+            ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActId), "Id", "Nombre", transaccion.CategoriaGastoId);
+            ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
+            ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
 
             return View(transaccion);
         }
 
         // GET: Muestra la lista de movimientos FILTRADOS y ORDENADOS
-        public async Task<IActionResult> Index(string sortOrder, int? mes, int? anio, TipoTransaccion? tipo, int? categoriaId)
+        public async Task<IActionResult> Index(string sortOrder, int? mes, int? anio, TipoTransaccion? tipo, int? categoriaId, int? cuentaId, int pagina = 1, int tamanioPagina = 10)
         {
             // --- NUEVO: Filtro por defecto al mes y año actual ---
             if (!mes.HasValue && !anio.HasValue)
@@ -209,6 +255,7 @@ namespace PresupuestoFamiliarApp.Controllers
             if (anio.HasValue) query = query.Where(t => t.Fecha.Year == anio.Value);
             if (tipo.HasValue) query = query.Where(t => t.Tipo == tipo.Value);
             if (categoriaId.HasValue) query = query.Where(t => t.CategoriaGastoId == categoriaId.Value);
+            if (cuentaId.HasValue) query = query.Where(t => t.CuentaId == cuentaId.Value); // NUEVO: Filtro por cuenta
 
             // --- APLICAR EL ORDENAMIENTO ---
             query = sortOrder switch
@@ -227,24 +274,52 @@ namespace PresupuestoFamiliarApp.Controllers
                 _ => query.OrderByDescending(t => t.Fecha), // Default
             };
 
-            var transacciones = await query.AsNoTracking().ToListAsync();
 
-            // Cálculos de Totales (Flujo de Caja Líquido)
-            decimal totalIngresos = transacciones.Where(t => t.Tipo == TipoTransaccion.Ingreso && !t.EsTransferencia && !t.Cuenta.EsCredito).Sum(t => t.Monto);
-            decimal totalEgresos = transacciones.Where(t => t.Tipo == TipoTransaccion.Egreso && !t.Cuenta.EsCredito).Sum(t => t.Monto);
+
+            int registrosPorPagina = tamanioPagina;
+
+            // 1. Contar total de registros filtrados para saber cuántas páginas hay
+            var totalRegistros = await query.CountAsync();
+
+            // --- LA CORRECCIÓN: Calcular totales GLOBALES usando 'query' ---
+            // Usamos 'await' y 'SumAsync' para que la suma se haga directamente en la Base de Datos
+            decimal totalIngresos = await query
+                .Where(t => t.Tipo == TipoTransaccion.Ingreso && !t.EsTransferencia && !t.Cuenta.EsCredito)
+                .SumAsync(t => t.Monto);
+
+            decimal totalEgresos = await query
+                .Where(t => t.Tipo == TipoTransaccion.Egreso && !t.Cuenta.EsCredito)
+                .SumAsync(t => t.Monto);
 
             ViewBag.TotalIngresos = totalIngresos;
             ViewBag.TotalEgresos = totalEgresos;
             ViewBag.BalanceTotal = totalIngresos - totalEgresos;
+            // ---------------------------------------------------------------
+
+            // 2. Aplicar el salto (Skip) y la toma (Take)
+            var transacciones = await query.AsNoTracking()
+                .Skip((pagina - 1) * registrosPorPagina)
+                .Take(registrosPorPagina)
+                .ToListAsync();
+
+            // 3. Enviar datos de paginación a la vista
+            ViewBag.PaginaActual = pagina;
+            ViewBag.TotalPaginas = (int)Math.Ceiling((double)totalRegistros / registrosPorPagina);
+            ViewBag.TamanioPagina = tamanioPagina; // NUEVO: Pasar el tamaño de página actual
 
             // Preparar Listas y preservar filtros
             var categoriasDelEspacio = await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToListAsync();
             ViewBag.Categorias = new SelectList(categoriasDelEspacio, "Id", "Nombre", categoriaId);
 
+            // NUEVO: Preparar lista de cuentas para el filtro
+            var cuentasDelEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
+            ViewBag.Cuentas = new SelectList(cuentasDelEspacio, "Id", "Nombre", cuentaId);
+
             ViewBag.MesSeleccionado = mes;
             ViewBag.AnioSeleccionado = anio;
             ViewBag.TipoSeleccionado = tipo;
-            ViewBag.CategoriaSeleccionada = categoriaId; // Guardamos este ID para los links
+            ViewBag.CategoriaSeleccionada = categoriaId;
+            ViewBag.CuentaSeleccionada = cuentaId; // NUEVO
 
             return View(transacciones);
         }
@@ -289,6 +364,7 @@ namespace PresupuestoFamiliarApp.Controllers
 
                 // Eliminar la transacción
                 _context.Transacciones.Remove(transaccion);
+                TempData["Exito"] = "El registro ha sido eliminado.";
                 await _context.SaveChangesAsync();
             }
 
@@ -404,7 +480,7 @@ namespace PresupuestoFamiliarApp.Controllers
                 await _context.SaveChangesAsync();
 
                 // --- NUEVA LÍNEA PARA DISPARAR LA ALERTA VISUAL ---
-                TempData["Exito"] = "El movimiento se registró correctamente.";
+                TempData["Exito"] = "Los cambios se guardaron correctamente.";
 
                 return RedirectToAction(nameof(Index));
             }
@@ -535,6 +611,7 @@ namespace PresupuestoFamiliarApp.Controllers
             }
 
             await _context.SaveChangesAsync();
+            TempData["Exito"] = "¡Excel importado correctamente!";
             return RedirectToAction(nameof(Index));
         }
     }

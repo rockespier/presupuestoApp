@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
+using PresupuestoFamiliarApp.Servicios;
 
 namespace PresupuestoFamiliarApp.Controllers
 {
@@ -32,7 +33,7 @@ namespace PresupuestoFamiliarApp.Controllers
         // POST: Guardar Usuario
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Usuario usuario, string PasswordPlain, int[] espaciosSeleccionados)
+        public async Task<IActionResult> Create(Usuario usuario, string PasswordPlain, int[] espaciosSeleccionados, string Email)
         {
             ModelState.Remove("PasswordHash");
             ModelState.Remove("Espacios");
@@ -45,6 +46,7 @@ namespace PresupuestoFamiliarApp.Controllers
             if (ModelState.IsValid && !string.IsNullOrEmpty(PasswordPlain))
             {
                 usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(PasswordPlain);
+                usuario.Email = Email;
 
                 // ASIGNAR LOS ESPACIOS MÚLTIPLES
                 if (espaciosSeleccionados != null && espaciosSeleccionados.Length > 0)
@@ -77,7 +79,7 @@ namespace PresupuestoFamiliarApp.Controllers
         // POST: Guardar los cambios del Usuario
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string NombreUsuario, string Rol, string? PasswordPlain, int[] espaciosSeleccionados)
+        public async Task<IActionResult> Edit(int id, string NombreUsuario, string Rol, string? PasswordPlain, int[] espaciosSeleccionados, string Email)
         {
             // 1. Buscamos el usuario original en la base de datos
             var usuarioDb = await _context.Usuarios.Include(u => u.Espacios).FirstOrDefaultAsync(u => u.Id == id);
@@ -94,6 +96,7 @@ namespace PresupuestoFamiliarApp.Controllers
             // 3. Actualizar datos básicos
             usuarioDb.NombreUsuario = NombreUsuario;
             usuarioDb.Rol = Rol;
+            usuarioDb.Email = Email;
 
             // 4. Actualizar contraseña SOLO si escribió una nueva
             if (!string.IsNullOrEmpty(PasswordPlain))
@@ -136,6 +139,21 @@ namespace PresupuestoFamiliarApp.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> ProbarReporteMensual([FromServices] AutomatizacionService _automatizacion)
+        {
+            try
+            {
+                await _automatizacion.EnviarResumenMensual();
+                TempData["Exito"] = "Reporte generado y enviado con éxito.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error al generar reporte: " + ex.Message;
+            }
+
+            return RedirectToAction("Index", "Home");
         }
     }
 }

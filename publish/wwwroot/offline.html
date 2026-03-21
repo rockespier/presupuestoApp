@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin conexión - Presupuesto Familiar App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="text-center max-w-md">
+        <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/20">
+            <div class="text-8xl mb-6">??</div>
+            <h1 class="text-3xl font-bold text-slate-800 mb-4">Sin Conexión</h1>
+            <p class="text-slate-600 mb-6">
+                No tienes conexión a internet en este momento. 
+                Algunas funciones pueden estar limitadas.
+            </p>
+            <button onclick="location.reload()" 
+                    class="px-6 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg">
+                Reintentar
+            </button>
+            <div class="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <p class="text-sm text-blue-800">
+                    ?? <strong>Tip:</strong> Muchas funciones siguen disponibles sin conexión gracias a nuestra tecnología PWA.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

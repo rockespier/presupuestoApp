@@ -1,49 +1,199 @@
 ﻿@model IEnumerable<PresupuestoFamiliarApp.Models.MovimientoFijo>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Ingresos y Gastos Fijos (Automáticos)</h2>
-    <a asp-action="Create" class="btn btn-primary">+ Nuevo Registro Fijo</a>
+@{
+    ViewData["Title"] = "Suscripciones";
+}
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Ingresos y Gastos Fijos</h2>
+        <p class="text-slate-600 dark:text-slate-400">Automatiza tus pagos recurrentes y suscripciones mensuales</p>
+    </div>
+    <a asp-action="Create" 
+       class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg hover:shadow-xl">
+        <span class="text-xl font-bold">+</span> Nuevo Registro Fijo
+    </a>
 </div>
 
-<table class="table table-hover shadow-sm bg-white rounded">
-    <thead class="table-dark">
-        <tr>
-            <th>Descripción</th>
-            <th>Tipo</th>
-            <th>Monto</th>
-            <th>Día de Cobro</th>
-            <th>Cuenta Automática</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td class="fw-bold">@item.Descripcion</td>
-                <td>
-                    <span class="badge @(item.Tipo == TipoTransaccion.Ingreso ? "bg-success" : "bg-danger")">@item.Tipo</span>
-                </td>
-                <td class="fw-bold">@ViewBag.SimboloMoneda @item.Monto.ToString("N2")</td>
-                <td>Los días <strong>@item.DiaDelMes</strong></td>
-                <td>@item.Cuenta?.Nombre</td>
-                <td>
-                    @if (item.Activo)
-                    {
-                        <span class="badge bg-primary">Activo</span>
-                    }
-                    else
-                    {
+<!-- Summary Cards -->
+@{
+    var totalIngresosFijos = Model.Where(m => m.Tipo == TipoTransaccion.Ingreso && m.Activo).Sum(m => m.Monto);
+    var totalGastosFijos = Model.Where(m => m.Tipo == TipoTransaccion.Egreso && m.Activo).Sum(m => m.Monto);
+    var balanceMensual = totalIngresosFijos - totalGastosFijos;
+    var cantidadActivos = Model.Count(m => m.Activo);
+    var cantidadPausados = Model.Count(m => !m.Activo);
+}
 
-                        <span class="badge bg-secondary">Pausado</span>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-green-100">Ingresos Fijos</p>
+            <span class="text-3xl">💰</span>
+        </div>
+        <p class="text-3xl font-bold">@ViewBag.SimboloMoneda @totalIngresosFijos.ToString("N2")</p>
+        <p class="text-green-100 text-sm mt-1">Por mes</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-red-100">Gastos Fijos</p>
+            <span class="text-3xl">💸</span>
+        </div>
+        <p class="text-3xl font-bold">@ViewBag.SimboloMoneda @totalGastosFijos.ToString("N2")</p>
+        <p class="text-red-100 text-sm mt-1">Por mes</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-blue-100">Balance Mensual</p>
+            <span class="text-3xl">📊</span>
+        </div>
+        <p class="text-3xl font-bold">@ViewBag.SimboloMoneda @balanceMensual.ToString("N2")</p>
+        <p class="text-blue-100 text-sm mt-1">Neto mensual</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-amber-100">Suscripciones</p>
+            <span class="text-3xl">🔄</span>
+        </div>
+        <p class="text-3xl font-bold">@cantidadActivos</p>
+        <p class="text-amber-100 text-sm mt-1">@cantidadPausados pausadas</p>
+    </div>
+</div>
+
+<!-- Table -->
+@if (Model.Any())
+{
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-slate-800 dark:bg-slate-900 text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Descripción</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Tipo</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Frecuencia</th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold">Monto</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold">Día de Cobro</th>
+                        <th class="px-4 py-3 text-left text-sm font-semibold">Cuenta</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold">Estado</th>
+                        <th class="px-4 py-3 text-center text-sm font-semibold">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                    @foreach (var item in Model.OrderBy(m => m.DiaDelMes))
+                    {
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                            <td class="px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br @(item.Tipo == TipoTransaccion.Ingreso ? "from-green-400 to-emerald-500" : "from-red-400 to-rose-500") flex items-center justify-center text-white font-bold">
+                                        @(item.Tipo == TipoTransaccion.Ingreso ? "+" : "-")
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-800 dark:text-white">@item.Descripcion</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">@item.Cuenta?.Nombre</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                @if (item.Tipo == TipoTransaccion.Ingreso)
+                                {
+                                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                        Ingreso
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">
+                                        Gasto
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                                    @item.FrecuenciaRepeticion
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-right">
+                                <p class="text-lg font-bold @(item.Tipo == TipoTransaccion.Ingreso ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")">
+                                    @ViewBag.SimboloMoneda @item.Monto.ToString("N2")
+                                </p>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-lg">
+                                    <i class="fa fa-calendar text-slate-600 dark:text-slate-400"></i>
+                                    <span class="font-bold text-slate-800 dark:text-white">Día @item.DiaDelMes</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="text-sm text-slate-700 dark:text-slate-300">@item.Cuenta?.Nombre</span>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                @if (item.Activo)
+                                {
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                        Activo
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400">
+                                        Pausado
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" 
+                                       class="px-3 py-1.5 text-xs font-semibold bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-lg hover:bg-primary-200 dark:hover:bg-primary-900/50 transition">
+                                        📝Editar
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" 
+                                       onclick="return confirm('¿Seguro que deseas eliminar esta suscripción automática?');"
+                                       class="px-3 py-1.5 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition">
+                                        🗑Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
                     }
-                </td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que deseas eliminar esta suscripción automática?');">Eliminar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Empty State -->
+    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl p-12 text-center">
+        <div class="text-6xl mb-4">🔄</div>
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">No hay suscripciones registradas</h3>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">Automatiza tus pagos recurrentes para no olvidar ningún gasto fijo</p>
+        <a asp-action="Create" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg">
+            <span class="text-xl font-bold">+</span> Crear Primera Suscripción
+        </a>
+    </div>
+}
+
+<!-- Info Section -->
+<div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+    <div class="flex items-start gap-4">
+        <div class="text-3xl">ℹ️</div>
+        <div class="flex-1">
+            <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">¿Cómo funcionan las suscripciones?</h4>
+            <p class="text-blue-800 dark:text-blue-200 text-sm mb-3">
+                Los movimientos fijos se registrarán automáticamente cada mes en la fecha especificada. 
+                Perfectos para salarios, alquileres, servicios y suscripciones.
+            </p>
+            <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                <li>Se crean automáticamente el día seleccionado de cada mes</li>
+                <li>Puedes pausarlos temporalmente sin eliminarlos</li>
+                <li>Ideal para Netflix, Spotify, gimnasio, alquileres, etc.</li>
+                <li>Mantén el control de tus gastos recurrentes</li>
+            </ul>
+        </div>
+    </div>
+</div>

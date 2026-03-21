@@ -1,11 +1,14 @@
 ﻿@model PresupuestoFamiliarApp.Models.MovimientoFijo
 
-<h2>Configurar Registro Automático</h2>
+<h2>Editar Registro Automático</h2>
 <hr />
 <div class="row">
     <div class="col-md-6">
         <form asp-action="Edit" class="card p-4 shadow-sm bg-light">
             <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="EspacioId" />
+            <input type="hidden" asp-for="UltimaGeneracion" />
+
             <div class="form-group mb-3">
                 <label asp-for="Descripcion" class="control-label fw-bold">Descripción (Ej: Netflix, Sueldo, Alquiler)</label>
                 <input asp-for="Descripcion" class="form-control" required />
@@ -17,15 +20,36 @@
                     <select asp-for="Tipo" class="form-select" id="tipoSelect" asp-items="Html.GetEnumSelectList<TipoTransaccion>()"></select>
                 </div>
                 <div class="col-md-6">
-                    <label asp-for="Monto" class="control-label fw-bold">Monto</label>
-                    <input asp-for="Monto" type="number" step="0.01" class="form-control text-primary fw-bold" required />
+                    <label asp-for="DiaDelMes" class="control-label fw-bold">Día del Mes (1-31)</label>
+                    <input asp-for="DiaDelMes" type="number" min="1" max="31" class="form-control" required />
                 </div>
             </div>
 
+            <!-- Selector de Moneda -->
+            <div class="form-group mb-3">
+                <label asp-for="MonedaMovimiento" class="control-label fw-bold">
+                    <i class="fas fa-coins me-1"></i>Moneda
+                </label>
+                <select asp-for="MonedaMovimiento" class="form-select" asp-items="Html.GetEnumSelectList<Moneda>()">
+                </select>
+                <small class="text-muted">
+                    Moneda actual: <strong>@Model.MonedaMovimiento</strong>
+                </small>
+            </div>
+
             <div class="form-group mb-4">
-                <label asp-for="DiaDelMes" class="control-label fw-bold">Día del Mes (1 al 31)</label>
-                <input asp-for="DiaDelMes" type="number" min="1" max="31" class="form-control" required />
-                <small class="text-muted">El sistema registrará este movimiento automáticamente cada mes en este día.</small>
+                <label asp-for="Monto" class="control-label fw-bold">Monto</label>
+                <div class="input-group">
+                    <span class="input-group-text" id="simboloMoneda">@ViewBag.SimboloMoneda</span>
+                    <input asp-for="Monto" type="number" step="0.01" class="form-control form-control-lg text-primary fw-bold" required />
+                </div>
+                <small class="text-muted">El símbolo cambiará automáticamente según la moneda seleccionada.</small>
+            </div>
+
+            <div class="form-group mb-4 p-3 bg-white border rounded shadow-sm">
+                <label asp-for="FechaFin" class="control-label fw-bold">Fecha de Fin (Opcional)</label>
+                <input asp-for="FechaFin" type="date" class="form-control" />
+                <small class="text-muted">Dejar en blanco para cobros indefinidos.</small>
             </div>
 
             <div class="form-group mb-3">
@@ -41,13 +65,17 @@
             </div>
 
             <div class="form-check mb-4">
-                <input asp-for="Activo" class="form-check-input" type="checkbox" checked />
+                <input asp-for="Activo" class="form-check-input" type="checkbox" />
                 <label asp-for="Activo" class="form-check-label fw-bold">Mantener Activo</label>
             </div>
 
             <div class="form-group">
-                <button type="submit" class="btn btn-success">Guardar Automatización</button>
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-1"></i>Guardar Cambios
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </a>
             </div>
         </form>
     </div>
@@ -55,7 +83,21 @@
 
 @section Scripts {
     <script>
-        // Lógica simple para ocultar la categoría si es un ingreso
+        // Actualizar el símbolo de moneda dinámicamente
+        document.querySelector('select[name="MonedaMovimiento"]').addEventListener('change', function() {
+            const moneda = this.value;
+            let simbolo = 'S/';
+
+            if (moneda === '1') {
+                simbolo = '$';
+            } else if (moneda === '2') {
+                simbolo = '€';
+            }
+
+            document.getElementById('simboloMoneda').textContent = simbolo;
+        });
+
+        // Lógica para ocultar la categoría si es un ingreso
         function evaluarCategoria() {
             var tipoSeleccionado = document.getElementById('tipoSelect').options[document.getElementById('tipoSelect').selectedIndex].text;
             var divCategoria = document.getElementById('divCategoria');

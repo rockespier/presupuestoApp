@@ -35,6 +35,8 @@ namespace PresupuestoFamiliarApp.Models
 
         [Required]
         public decimal PresupuestoMensual { get; set; }
+        // NUEVA PROPIEDAD: Moneda de la categoría
+        public Moneda MonedaCategoria { get; set; } = Moneda.Soles;
 
         public List<Transaccion> Transacciones { get; set; } = new();
         // AÑADIR ESTO: Relación con el Espacio de trabajo

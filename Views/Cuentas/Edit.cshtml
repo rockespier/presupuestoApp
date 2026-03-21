@@ -1,20 +1,174 @@
 ﻿@model Cuenta
-<h2>Configurar Cuenta</h2>
-<hr />
-<form asp-action="@(Model?.Id > 0 ? "Edit" : "Create")">
-    <input type="hidden" asp-for="Id" />
-    <div class="form-group mb-3">
-        <label asp-for="Nombre" class="control-label fw-bold"></label>
-        <input asp-for="Nombre" class="form-control" required />
+
+@{
+    ViewData["Title"] = Model?.Id > 0 ? "Editar Cuenta" : "Nueva Cuenta";
+}
+
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+        @(Model?.Id > 0 ? "Editar Cuenta" : "Nueva Cuenta")
+    </h2>
+    <p class="text-slate-600 dark:text-slate-400">
+        @(Model?.Id > 0 ? "Actualiza la información de tu cuenta bancaria o tarjeta" : "Registra una nueva cuenta bancaria o tarjeta de crédito")
+    </p>
+</div>
+
+<div class="max-w-2xl">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="@(Model?.Id > 0 ? "Edit" : "Create")" class="space-y-6">
+            <input type="hidden" asp-for="Id" />
+            
+            <!-- Validation Summary -->
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
+                </div>
+            </div>
+
+            <!-- Nombre de la Cuenta -->
+            <div>
+                <label asp-for="Nombre" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-bank mr-2 text-primary-500"></i>Nombre de la Cuenta
+                </label>
+                <input asp-for="Nombre" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej. Banco BCP, Efectivo, Visa..." 
+                       required />
+                <span asp-validation-for="Nombre" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Tipo de Cuenta -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                    <i class="fa fa-credit-card mr-2 text-primary-500"></i>Tipo de Cuenta
+                </label>
+                
+                <div class="space-y-3">
+                    <!-- Cuenta de Dinero -->
+                    <label class="flex items-start p-4 border-2 @(!Model.EsCredito ? "border-green-500 bg-green-50 dark:bg-green-900/20" : "border-slate-200 dark:border-slate-700") rounded-xl cursor-pointer hover:border-green-400 transition">
+                        <input type="checkbox" asp-for="EsCredito" value="false" 
+                               class="w-5 h-5 text-green-600 rounded focus:ring-green-500 mt-0.5"
+                               onchange="this.form.EsCredito.value = !this.checked;" />
+                        <div class="ml-4 flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-2xl">💰</span>
+                                <p class="font-bold text-slate-800 dark:text-white">Cuenta de Dinero</p>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">
+                                Cuenta bancaria, efectivo o dinero disponible
+                            </p>
+                        </div>
+                    </label>
+                    
+                    <!-- Tarjeta de Crédito -->
+                    <label class="flex items-start p-4 border-2 @(Model.EsCredito ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-slate-200 dark:border-slate-700") rounded-xl cursor-pointer hover:border-red-400 transition">
+                        <input type="checkbox" asp-for="EsCredito" 
+                               class="w-5 h-5 text-red-600 rounded focus:ring-red-500 mt-0.5" />
+                        <div class="ml-4 flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-2xl">💳</span>
+                                <p class="font-bold text-slate-800 dark:text-white">Tarjeta de Crédito</p>
+                            </div>
+                            <p class="text-sm text-slate-600 dark:text-slate-400">
+                                Línea de crédito que genera deuda
+                            </p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Moneda -->
+            <div>
+                <label asp-for="MonedaCuenta" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                    <i class="fa fa-coins mr-2 text-primary-500"></i>Moneda de la Cuenta
+                </label>
+                <select asp-for="MonedaCuenta" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="Html.GetEnumSelectList<Moneda>()">
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                    <i class="fa fa-info-circle"></i>
+                    Selecciona la moneda en la que está denominada esta cuenta
+                </p>
+            </div>
+
+            <!-- Saldo/Deuda Inicial -->
+            <div>
+                <label asp-for="SaldoActual" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-money mr-2 text-primary-500"></i>
+                    <span id="labelSaldo">Saldo Inicial</span>
+                </label>
+                <div class="flex items-center gap-2">
+                    <span class="px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg border-2 border-slate-200 dark:border-slate-600">
+                        S/
+                    </span>
+                    <input asp-for="SaldoActual" 
+                           type="number" 
+                           step="0.01" 
+                           class="flex-1 px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-2xl font-bold focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                           placeholder="0.00"
+                           required />
+                </div>
+                <p id="helpText" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Ingresa el saldo actual de tu cuenta
+                </p>
+                <span asp-validation-for="SaldoActual" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
+                <button type="submit" 
+                        class="flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i class="fa fa-save"></i>
+                    Guardar Cuenta
+                </button>
+                <a asp-action="Index" 
+                   class="flex-1 sm:flex-initial px-6 py-3.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-center flex items-center justify-center gap-2">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
     </div>
-    <div class="form-group mb-3">
-        <label asp-for="SaldoActual" class="control-label fw-bold">Saldo Inicial / Deuda Actual</label>
-        <input asp-for="SaldoActual" type="number" step="0.01" class="form-control" required />
+
+    <!-- Info Section -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+        <div class="flex items-start gap-4">
+            <div class="text-3xl">💡</div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">Consejos sobre Cuentas</h4>
+                <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                    <li><strong>Cuentas de Dinero:</strong> Registra el saldo actual disponible (positivo)</li>
+                    <li><strong>Tarjetas de Crédito:</strong> Registra la deuda actual (será convertida a negativo automáticamente)</li>
+                    <li>Puedes tener múltiples cuentas en diferentes monedas</li>
+                    <li>El sistema llevará el control automático de saldos con cada transacción</li>
+                </ul>
+            </div>
+        </div>
     </div>
-    <div class="form-check mb-4">
-        <input asp-for="EsCredito" class="form-check-input" type="checkbox" />
-        <label asp-for="EsCredito" class="form-check-label text-danger fw-bold">Es una Tarjeta de Crédito</label>
-    </div>
-    <button type="submit" class="btn btn-success">Guardar</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Actualizar labels según el tipo de cuenta
+        const esCreditoCheckbox = document.querySelector('input[name="EsCredito"]');
+        const labelSaldo = document.getElementById('labelSaldo');
+        const helpText = document.getElementById('helpText');
+        
+        function updateLabels() {
+            if (esCreditoCheckbox.checked) {
+                labelSaldo.innerHTML = '<i class="fa fa-credit-card mr-2 text-red-500"></i>Deuda Actual de la Tarjeta';
+                helpText.textContent = 'Ingresa el monto actual que debes en la tarjeta (será registrado como negativo)';
+            } else {
+                labelSaldo.innerHTML = '<i class="fa fa-money mr-2 text-green-500"></i>Saldo Inicial';
+                helpText.textContent = 'Ingresa el saldo actual disponible en tu cuenta';
+            }
+        }
+        
+        esCreditoCheckbox.addEventListener('change', updateLabels);
+        updateLabels(); // Llamar al cargar la página
+    </script>
+}

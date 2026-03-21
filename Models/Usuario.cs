@@ -10,13 +10,23 @@ namespace PresupuestoFamiliarApp.Models
         public string NombreUsuario { get; set; }
 
         [Required]
-        public string PasswordHash { get; set; } // Aquí guardaremos la contraseña encriptada
+        public string PasswordHash { get; set; }
 
         [Required]
-        public string Rol { get; set; } // "Administrador" o "Usuario"
+        public string Rol { get; set; }
 
-        // El Administrador puede tener esto en null (porque ve todo), 
-        // pero el Usuario obligatoriamente pertenece a un solo presupuesto.
         public List<Espacio> Espacios { get; set; } = new List<Espacio>();
+
+        public string? PasswordResetToken { get; set; }
+        public DateTime? ResetTokenExpires { get; set; }
+
+        [Required(ErrorMessage = "El correo es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
+        public string Email { get; set; }
+
+        public bool TourCompletado { get; set; } = false;
+
+        // NUEVA PROPIEDAD: Moneda preferida del usuario
+        public Moneda MonedaPreferida { get; set; } = Moneda.Soles;
     }
 }

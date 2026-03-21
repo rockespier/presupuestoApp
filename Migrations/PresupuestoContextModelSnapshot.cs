@@ -50,6 +50,9 @@ namespace PresupuestoFamiliarApp.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
+                    b.Property<int>("MonedaCategoria")
+                        .HasColumnType("int");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -71,6 +74,7 @@ namespace PresupuestoFamiliarApp.Migrations
                         {
                             Id = 1,
                             EspacioId = 1,
+                            MonedaCategoria = 0,
                             Nombre = "Comida",
                             PresupuestoMensual = 500m
                         },
@@ -78,6 +82,7 @@ namespace PresupuestoFamiliarApp.Migrations
                         {
                             Id = 2,
                             EspacioId = 1,
+                            MonedaCategoria = 0,
                             Nombre = "Vivienda",
                             PresupuestoMensual = 1000m
                         },
@@ -85,6 +90,7 @@ namespace PresupuestoFamiliarApp.Migrations
                         {
                             Id = 3,
                             EspacioId = 1,
+                            MonedaCategoria = 0,
                             Nombre = "Transporte",
                             PresupuestoMensual = 150m
                         },
@@ -92,6 +98,7 @@ namespace PresupuestoFamiliarApp.Migrations
                         {
                             Id = 4,
                             EspacioId = 1,
+                            MonedaCategoria = 0,
                             Nombre = "Gastos personales",
                             PresupuestoMensual = 200m,
                             Subcategoria = "Peluquería, móvil, deporte"
@@ -100,6 +107,7 @@ namespace PresupuestoFamiliarApp.Migrations
                         {
                             Id = 5,
                             EspacioId = 1,
+                            MonedaCategoria = 0,
                             Nombre = "Gastos de mascota",
                             PresupuestoMensual = 100m
                         },
@@ -107,6 +115,7 @@ namespace PresupuestoFamiliarApp.Migrations
                         {
                             Id = 6,
                             EspacioId = 1,
+                            MonedaCategoria = 0,
                             Nombre = "Servicios de casa",
                             PresupuestoMensual = 200m,
                             Subcategoria = "Luz, agua, gas, internet"
@@ -175,6 +184,71 @@ namespace PresupuestoFamiliarApp.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.CuentaPorCobrar", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DeudorId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("EsAlquiler")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaVencimiento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MonedaDeuda")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("MontoPagado")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MontoTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeudorId");
+
+                    b.ToTable("CuentasPorCobrar");
+                });
+
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.Deudor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EspacioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Telefono")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EspacioId");
+
+                    b.ToTable("Deudores");
+                });
+
             modelBuilder.Entity("PresupuestoFamiliarApp.Models.Espacio", b =>
                 {
                     b.Property<int>("Id")
@@ -232,6 +306,12 @@ namespace PresupuestoFamiliarApp.Migrations
 
                     b.Property<DateTime?>("FechaFin")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("FrecuenciaRepeticion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MonedaMovimiento")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Monto")
                         .HasColumnType("decimal(18,2)");
@@ -332,6 +412,13 @@ namespace PresupuestoFamiliarApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MonedaPreferida")
+                        .HasColumnType("int");
+
                     b.Property<string>("NombreUsuario")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -340,9 +427,18 @@ namespace PresupuestoFamiliarApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResetTokenExpires")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Rol")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TourCompletado")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -352,9 +448,12 @@ namespace PresupuestoFamiliarApp.Migrations
                         new
                         {
                             Id = 1,
+                            Email = "rtres.info@gmail.com",
+                            MonedaPreferida = 0,
                             NombreUsuario = "admin",
-                            PasswordHash = "$2a$11$kRijcgc6W/24JVO8tlkuK.kFn.Nflb1/HpUiTCPFlunkpOBobkVdC",
-                            Rol = "Administrador"
+                            PasswordHash = "$2a$11$lGmNXDsL0GHkEtaFW1YEBuOb3V8o2rdyK2jB8Wi3FuW6iZSB2g8Em",
+                            Rol = "Administrador",
+                            TourCompletado = false
                         });
                 });
 
@@ -388,6 +487,28 @@ namespace PresupuestoFamiliarApp.Migrations
                 {
                     b.HasOne("PresupuestoFamiliarApp.Models.Espacio", "Espacio")
                         .WithMany("Cuentas")
+                        .HasForeignKey("EspacioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Espacio");
+                });
+
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.CuentaPorCobrar", b =>
+                {
+                    b.HasOne("PresupuestoFamiliarApp.Models.Deudor", "Deudor")
+                        .WithMany("CuentasPorCobrar")
+                        .HasForeignKey("DeudorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Deudor");
+                });
+
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.Deudor", b =>
+                {
+                    b.HasOne("PresupuestoFamiliarApp.Models.Espacio", "Espacio")
+                        .WithMany()
                         .HasForeignKey("EspacioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -437,6 +558,11 @@ namespace PresupuestoFamiliarApp.Migrations
             modelBuilder.Entity("PresupuestoFamiliarApp.Models.Cuenta", b =>
                 {
                     b.Navigation("Transacciones");
+                });
+
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.Deudor", b =>
+                {
+                    b.Navigation("CuentasPorCobrar");
                 });
 
             modelBuilder.Entity("PresupuestoFamiliarApp.Models.Espacio", b =>

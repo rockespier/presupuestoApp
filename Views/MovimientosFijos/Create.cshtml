@@ -1,73 +1,220 @@
 ﻿@model PresupuestoFamiliarApp.Models.MovimientoFijo
 
-<h2>Configurar Registro Automático</h2>
-<hr />
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create" class="card p-4 shadow-sm bg-light">
+@{
+    ViewData["Title"] = "Nueva Suscripción";
+}
 
-            <div class="form-group mb-3">
-                <label asp-for="Descripcion" class="control-label fw-bold">Descripción (Ej: Netflix, Sueldo, Alquiler)</label>
-                <input asp-for="Descripcion" class="form-control" required />
-            </div>
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Configurar Registro Automático</h2>
+    <p class="text-slate-600 dark:text-slate-400">Crea un movimiento que se repetirá automáticamente cada mes</p>
+</div>
 
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label asp-for="Tipo" class="control-label fw-bold">Tipo de Movimiento</label>
-                    <select asp-for="Tipo" class="form-select" id="tipoSelect" asp-items="Html.GetEnumSelectList<TipoTransaccion>()"></select>
+<div class="max-w-3xl">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="Create" class="space-y-6">
+            <!-- Validation Summary -->
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="Monto" class="control-label fw-bold">Monto</label>
-                    <input asp-for="Monto" type="number" step="0.01" class="form-control text-primary fw-bold" required />
+            </div>
+
+            <!-- Descripción -->
+            <div>
+                <label asp-for="Descripcion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-file-text mr-2 text-primary-500"></i>Descripción
+                </label>
+                <input asp-for="Descripcion" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej: Netflix, Sueldo, Alquiler, Spotify..." 
+                       required />
+                <span asp-validation-for="Descripcion" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Tipo y Día -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label asp-for="Tipo" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="fa fa-exchange-alt mr-2 text-primary-500"></i>Tipo de Movimiento
+                    </label>
+                    <select asp-for="Tipo" id="tipoSelect"
+                            class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                            asp-items="Html.GetEnumSelectList<TipoTransaccion>()">
+                    </select>
+                </div>
+
+                <div>
+                    <label asp-for="DiaDelMes" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        <i class="fa fa-calendar-day mr-2 text-primary-500"></i>Día del Mes
+                    </label>
+                    <input asp-for="DiaDelMes" 
+                           type="number" 
+                           min="1" 
+                           max="31"
+                           class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                           placeholder="1-31"
+                           required />
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Día en que se ejecutará</p>
                 </div>
             </div>
 
-            <div class="form-group mb-4">
-                <label asp-for="DiaDelMes" class="control-label fw-bold">Día del Mes (1 al 31)</label>
-                <input asp-for="DiaDelMes" type="number" min="1" max="31" class="form-control" required />
-                <small class="text-muted">El sistema registrará este movimiento automáticamente cada mes en este día.</small>
-            </div>
-            <div class="form-group mb-4 p-3 bg-white border rounded shadow-sm">
-                <label asp-for="FechaFin" class="control-label fw-bold">Fecha de Fin (Opcional)</label>
-                <input asp-for="FechaFin" type="date" class="form-control" />
-                <small class="text-muted">Si dejas esto en blanco, se cobrará indefinidamente. Si pones una fecha, el sistema dejará de generar cobros automáticamente después de ese día.</small>
-            </div>
-            <div class="form-group mb-3">
-                <label asp-for="CuentaId" class="control-label fw-bold">¿A qué cuenta va / de dónde se cobra?</label>
-                <select asp-for="CuentaId" class="form-select" asp-items="ViewBag.CuentaId" required></select>
+            <!-- Frecuencia -->
+            <div>
+                <label asp-for="FrecuenciaRepeticion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-calendar-alt mr-2 text-primary-500"></i>Frecuencia de Repetición
+                </label>
+                <select asp-for="FrecuenciaRepeticion" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="Html.GetEnumSelectList<Frecuencia>()">
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                    <i class="fa fa-info-circle"></i>
+                    Define cada cuánto tiempo se repetirá este movimiento
+                </p>
             </div>
 
-            <div class="form-group mb-4" id="divCategoria">
-                <label asp-for="CategoriaGastoId" class="control-label fw-bold">Categoría (Solo si es Gasto)</label>
-                <select asp-for="CategoriaGastoId" class="form-select" asp-items="ViewBag.CategoriaGastoId">
+            <!-- Moneda -->
+            <div>
+                <label asp-for="MonedaMovimiento" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-coins mr-2 text-primary-500"></i>Moneda
+                </label>
+                <select asp-for="MonedaMovimiento" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="Html.GetEnumSelectList<Moneda>()">
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona la moneda del monto</p>
+            </div>
+
+            <!-- Monto -->
+            <div>
+                <label asp-for="Monto" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-dollar-sign mr-2 text-primary-500"></i>Monto
+                </label>
+                <div class="flex items-center gap-2">
+                    <span id="simboloMoneda" class="px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg border-2 border-slate-200 dark:border-slate-600">
+                        @ViewBag.SimboloMoneda
+                    </span>
+                    <input asp-for="Monto" 
+                           type="number" 
+                           step="0.01" 
+                           class="flex-1 px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-2xl font-bold focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                           placeholder="0.00"
+                           required />
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">El símbolo cambiará según la moneda seleccionada</p>
+                <span asp-validation-for="Monto" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Fecha Fin -->
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                <label asp-for="FechaFin" class="block text-sm font-semibold text-amber-900 dark:text-amber-300 mb-2">
+                    <i class="fa fa-calendar-times mr-2"></i>Fecha de Fin (Opcional)
+                </label>
+                <input asp-for="FechaFin" 
+                       type="date" 
+                       class="w-full px-4 py-3 border-2 border-amber-200 dark:border-amber-700 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition outline-none" />
+                <p class="text-xs text-amber-800 dark:text-amber-200 mt-2">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Si dejas esto en blanco, se repetirá indefinidamente. Si defines una fecha, dejará de generarse automáticamente después de ese día.
+                </p>
+            </div>
+
+            <!-- Cuenta -->
+            <div>
+                <label asp-for="CuentaId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-university mr-2 text-primary-500"></i>¿A qué cuenta va / de dónde se cobra?
+                </label>
+                <select asp-for="CuentaId" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CuentaId" 
+                        required>
+                </select>
+                <span asp-validation-for="CuentaId" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Categoría -->
+            <div id="divCategoria">
+                <label asp-for="CategoriaGastoId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-tags mr-2 text-primary-500"></i>Categoría (Solo si es Gasto)
+                </label>
+                <select asp-for="CategoriaGastoId" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CategoriaGastoId">
                     <option value="">-- Selecciona una categoría --</option>
                 </select>
             </div>
 
-            <div class="form-check mb-4">
-                <input asp-for="Activo" class="form-check-input" type="checkbox" checked />
-                <label asp-for="Activo" class="form-check-label fw-bold">Mantener Activo</label>
+            <!-- Activo Checkbox -->
+            <div class="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-xl p-4">
+                <label class="flex items-center cursor-pointer">
+                    <input asp-for="Activo" type="checkbox" class="w-5 h-5 text-green-600 rounded focus:ring-green-500" />
+                    <span class="ml-3">
+                        <span class="block text-sm font-semibold text-green-900 dark:text-green-300">
+                            <i class="fa fa-check-circle mr-1"></i>Mantener Activo
+                        </span>
+                        <span class="block text-xs text-green-700 dark:text-green-400 mt-1">
+                            Si está marcado, el movimiento se registrará automáticamente cada mes
+                        </span>
+                    </span>
+                </label>
             </div>
 
-            <div class="form-group">
-                <button type="submit" class="btn btn-success">Guardar Automatización</button>
-                <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
+                <button type="submit" 
+                        class="flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i class="fa fa-save"></i>
+                    Guardar Automatización
+                </button>
+                <a asp-action="Index" 
+                   class="flex-1 sm:flex-initial px-6 py-3.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-center flex items-center justify-center gap-2">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </a>
             </div>
         </form>
+    </div>
+
+    <!-- Info Section -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+        <div class="flex items-start gap-4">
+            <div class="text-3xl">💡</div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">¿Cómo Funcionan los Movimientos Fijos?</h4>
+                <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                    <li>Se crean automáticamente en la fecha especificada cada mes</li>
+                    <li>Perfectos para salarios, alquileres, Netflix, Spotify, etc.</li>
+                    <li>Puedes pausarlos temporalmente sin eliminarlos</li>
+                    <li>Define una fecha de fin si es temporal (ej. contrato por 12 meses)</li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        // Lógica simple para ocultar la categoría si es un ingreso
-        function evaluarCategoria() {
-            var tipoSeleccionado = document.getElementById('tipoSelect').options[document.getElementById('tipoSelect').selectedIndex].text;
-            var divCategoria = document.getElementById('divCategoria');
+        // Actualizar el símbolo de moneda dinámicamente
+        document.querySelector('select[name="MonedaMovimiento"]').addEventListener('change', function() {
+            const moneda = this.value;
+            let simbolo = 'S/';
+            if (moneda === '1') simbolo = '$';
+            else if (moneda === '2') simbolo = '€';
+            document.getElementById('simboloMoneda').textContent = simbolo;
+        });
 
+        // Lógica para ocultar la categoría si es un ingreso
+        function evaluarCategoria() {
+            const tipoSeleccionado = document.getElementById('tipoSelect').options[document.getElementById('tipoSelect').selectedIndex].text;
+            const divCategoria = document.getElementById('divCategoria');
+            
             if (tipoSeleccionado === 'Ingreso') {
-                divCategoria.style.display = 'none';
+                divCategoria.classList.add('hidden');
             } else {
-                divCategoria.style.display = 'block';
+                divCategoria.classList.remove('hidden');
             }
         }
 

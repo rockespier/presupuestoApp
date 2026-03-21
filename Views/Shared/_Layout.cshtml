@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 @using PresupuestoFamiliarApp.Data
 @using System.Security.Claims
 @inject PresupuestoContext _context
@@ -14,170 +14,454 @@
     var espacios = _context.Espacios.ToList();
     var espacioActual = espacios.FirstOrDefault(e => e.Id == espacioActualId) ?? espacios.First();
 }
-<html lang="en">
+
+<html lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="MisPresupuestosApp es tu aliado para gestionar las finanzas de tu personales de manera sencilla y eficiente. Con nuestra aplicación, puedes llevar un control detallado de tus ingresos, gastos, presupuestos y más, todo en un solo lugar. ¡Empieza a organizar tus finanzas personales hoy mismo!" />
     <title>@ViewData["Title"] - PresupuestoFamiliarApp</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="Presupuesto Familiar App" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PresupuestoApp" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#0ea5e9" />
+    <meta name="msapplication-TileColor" content="#0ea5e9" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="~/manifest.json" />
+    
+    <!-- Icons for PWA -->
+    <link rel="icon" type="image/png" sizes="192x192" href="~/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="~/icons/icon-512x512.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="~/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="~/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="~/icons/icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="~/icons/icon-128x128.png" />
+    
+    <!-- iOS Splash Screens (opcional pero recomendado) -->
+    <link rel="apple-touch-startup-image" href="~/icons/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="~/icons/splash-1668x2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="~/icons/splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" />
+    <link rel="apple-touch-startup-image" href="~/icons/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="~/icons/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
+    <link rel="apple-touch-startup-image" href="~/icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <link href="~/font-awesome/css/font-awesome.css" rel="stylesheet" />
+    <link href="~/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/PresupuestoFamiliarApp.styles.css" asp-append-version="true" />
     
+    <!-- PWA Installer Script -->
+    <script src="~/js/pwa-installer.js" defer></script>
+    
+    <style>
+        /* Transiciones suaves para el modo oscuro */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        /* Mobile menu animation */
+        .mobile-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .mobile-menu.active {
+            transform: translateX(0);
+        }
+        
+        /* PWA Standalone Mode Adjustments */
+        body.pwa-installed {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        /* Animación para el botón de instalación */
+        @@keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .animate-bounce {
+            animation: bounce 2s infinite;
+        }
+    </style>
 </head>
 
-<body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary py-3 shadow-sm">
-            <div class="container-fluid px-4">
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 min-h-screen">
+    @{
+        // Leemos el ID de la cookie
+        int espacioActivoId = Context.Request.Cookies["EspacioActivoId"] != null
+            ? int.Parse(Context.Request.Cookies["EspacioActivoId"])
+            : 0;
 
-                <div class="me-4">
-                    @{
-                        int espacioActivoId = Context.Request.Cookies["EspacioActivoId"] != null ? int.Parse(Context.Request.Cookies["EspacioActivoId"]) : 1;
-                        List<PresupuestoFamiliarApp.Models.Espacio> espaciosPermitidos = new();
+        List<PresupuestoFamiliarApp.Models.Espacio> espaciosPermitidos = new();
 
-                        if (User.Identity.IsAuthenticated)
-                        {
-                            // Si es Admin, ve todos
-                            if (User.IsInRole("Administrador"))
-                            {
-                                espaciosPermitidos = _context.Espacios.ToList();
-                            }
-                            // Si es Usuario normal, leemos la lista de IDs que le dimos al iniciar sesión
-                            else
-                            {
-                                var claimEspacios = User.Claims.FirstOrDefault(c => c.Type == "EspaciosPermitidos")?.Value;
-                                if (!string.IsNullOrEmpty(claimEspacios))
-                                {
-                                    var ids = claimEspacios.Split(',').Select(int.Parse).ToList();
-                                    espaciosPermitidos = _context.Espacios.Where(e => ids.Contains(e.Id)).ToList();
-                                }
-                            }
-                        }
+        if (User.Identity.IsAuthenticated)
+        {
+            var nombreUsuarioActual = User.Identity.Name;
 
-                        var espacioActivo = espaciosPermitidos.FirstOrDefault(e => e.Id == espacioActivoId) ?? espaciosPermitidos.FirstOrDefault();
-                    }
+            if (User.IsInRole("Administrador"))
+            {
+                espaciosPermitidos = _context.Espacios.ToList();
+            }
+            else
+            {
+                espaciosPermitidos = _context.Espacios
+                    .Where(e => e.Usuarios.Any(u => u.Email == nombreUsuarioActual || u.NombreUsuario == nombreUsuarioActual))
+                    .ToList();
+            }
 
+            if (!espaciosPermitidos.Any(e => e.Id == espacioActivoId))
+            {
+                var primerPermitido = espaciosPermitidos.FirstOrDefault();
+                if (primerPermitido != null)
+                {
+                    espacioActivoId = primerPermitido.Id;
+                }
+            }
+        }
+
+        var espacioActivo = espaciosPermitidos.FirstOrDefault(e => e.Id == espacioActivoId) ?? espaciosPermitidos.FirstOrDefault();
+    }
+
+    <!-- Header/Navbar -->
+    <header class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <nav class="container mx-auto px-4 lg:px-6">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo y Espacio Selector -->
+                <div class="flex items-center gap-4">
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    
                     @if (espaciosPermitidos.Any())
                     {
-                        <div class="dropdown">
-                            <button class="btn btn-light dropdown-toggle fw-bold text-primary shadow-sm" type="button" id="espacioDropdown" data-bs-toggle="dropdown">
-                                🏢 @(espacioActivo?.Nombre ?? "Seleccionar Espacio")
+                        <div class="relative" x-data="{ open: false }">
+                            <button onclick="toggleDropdown('espacioDropdown')" 
+                                    class="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold hover:from-primary-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all">
+                                <span class="hidden sm:inline">@(espacioActivo?.Nombre ?? "Seleccionar Espacio")</span>
+                                <span class="sm:hidden">@((espacioActivo?.Nombre ?? "Espacio").Substring(0, Math.Min(10, (espacioActivo?.Nombre ?? "Espacio").Length)))</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
                             </button>
-                            <ul class="dropdown-menu shadow-lg border-0 mt-2">
+                            <div id="espacioDropdown" class="hidden absolute top-full mt-2 left-0 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
                                 @foreach (var espacio in espaciosPermitidos)
                                 {
-                                    <li>
-                                        <form asp-controller="Home" asp-action="CambiarEspacio" method="post">
-                                            <input type="hidden" name="id" value="@espacio.Id" />
-                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-
-                                            <button type="submit" class="dropdown-item @(espacio.Id == espacioActivoId ? "active fw-bold" : "")">
-                                                @espacio.Nombre
-                                            </button>
-                                        </form>
-                                    </li>
+                                    <form asp-controller="Home" asp-action="CambiarEspacio" method="post" class="m-0">
+                                        <input type="hidden" name="id" value="@espacio.Id" />
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                        <button type="submit" class="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 @(espacio.Id == espacioActivoId ? "bg-primary-50 dark:bg-primary-900/20 font-semibold text-primary-600 dark:text-primary-400" : "")">
+                                            @espacio.Nombre
+                                        </button>
+                                    </form>
                                 }
-                            </ul>
+                            </div>
                         </div>
                     }
                 </div>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navPrincipal">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+                <!-- Desktop Navigation -->
+                <div class="hidden lg:flex items-center gap-1">
+                    <a asp-controller="Home" asp-action="Index" id="menu-dashboard" 
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
+                        Dashboard
+                    </a>
+                    <a asp-controller="Cuentas" asp-action="Index" id="menu-cuentas" 
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
+                        Cuentas
+                    </a>
+                    <a asp-controller="Transacciones" asp-action="Index" id="menu-transacciones" 
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
+                        Historial
+                    </a>
+                    <a asp-controller="Categorias" asp-action="Index" id="menu-presupuestos" 
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
+                        Presupuestos
+                    </a>
+                    <a asp-controller="MovimientosFijos" asp-action="Index" id="menu-suscripciones" 
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
+                        Suscripciones
+                    </a>
+                    <a asp-controller="CuentasPorCobrar" asp-action="Index" id="menu-deudores" 
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
+                        Deudores
+                    </a>
+                </div>
 
-                <div class="collapse navbar-collapse" id="navPrincipal">
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <!-- Transferir Button -->
+                    <a asp-controller="Transferencias" asp-action="Create" id="menu-transferir" 
+                       class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 font-medium transition">
+                        <i class="fa fa-exchange" aria-hidden="true"></i>
+                        <span class="hidden md:inline">Transferir</span>
+                    </a>
+                    
+                    <!-- Nuevo Movimiento Button -->
+                    <a asp-controller="Transacciones" asp-action="Create" 
+                       class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 font-medium shadow-md hover:shadow-lg transition">
+                        <span class="text-lg font-bold">+</span>
+                        <span class="hidden md:inline">Nuevo</span>
+                    </a>
 
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-2 fs-6">
-                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Home" asp-action="Index">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Cuentas" asp-action="Index">Cuentas</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Transacciones" asp-action="Index">Historial</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" asp-controller="Presupuestos" asp-action="Index">Presupuestos</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" asp-controller="MovimientosFijos" asp-action="Index">Suscripciones</a></li>
-                    </ul>
+                    <!-- Dark Mode Toggle -->
+                    <button id="darkModeToggle" type="button" 
+                            class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <span id="themeIcon" class="text-xl">🌙</span>
+                    </button>
 
-                    <div class="d-flex align-items-center gap-3">
-
-                        <a class="btn btn-warning fw-bold rounded-pill px-4 shadow-sm" asp-controller="Transferencias" asp-action="Create">
-                            🔄 Transferir
-                        </a>
-                        <a class="btn btn-light text-primary fw-bold rounded-pill px-4 shadow-sm" asp-controller="Transacciones" asp-action="Create">
-                            + Nuevo Movimiento
-                        </a>
-
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <ul class="navbar-nav ms-2">
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-white fw-bold d-flex align-items-center" href="#" id="perfilDropdown" role="button" data-bs-toggle="dropdown">
-                                        <span class="bg-white text-primary rounded-circle px-2 py-1 me-2" style="font-size: 0.85rem;">👤</span>
-                                        @User.Identity.Name
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <div class="relative">
+                            <button onclick="toggleDropdown('perfilDropdown')" 
+                                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium transition">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                                    @(User.Identity.Name?.Substring(0, 1).ToUpper())
+                                </div>
+                                <span class="hidden xl:inline">@User.Identity.Name</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="perfilDropdown" class="hidden absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+                                @if (User.IsInRole("Administrador"))
+                                {
+                                    <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Configuración</p>
+                                    </div>
+                                    <a asp-controller="Espacios" asp-action="Index" 
+                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                        <i class="fa fa-home w-5" aria-hidden="true"></i> Espacios
                                     </a>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2">
-
-                                        @if (User.IsInRole("Administrador"))
-                                        {
-                                            <li><h6 class="dropdown-header text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Configuración</h6></li>
-                                            <li><a class="dropdown-item py-2" asp-controller="Espacios" asp-action="Index">🏢 Espacios</a></li>
-                                            <li><a class="dropdown-item py-2" asp-controller="Usuarios" asp-action="Index">👥 Usuarios</a></li>
-                                            <li><a class="dropdown-item py-2" asp-controller="TiposCambio" asp-action="Index">💱 Tipos de Cambio</a></li>
-                                            <li><hr class="dropdown-divider"></li>
-                                        }
-
-                                        <li><a class="dropdown-item text-danger py-2 fw-bold" asp-controller="Auth" asp-action="Logout">🚪 Cerrar Sesión</a></li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        }
-                    </div>
+                                    <a asp-controller="Usuarios" asp-action="Index" 
+                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                        <i class="fa fa-users w-5" aria-hidden="true"></i> Usuarios
+                                    </a>
+                                    <a asp-controller="TiposCambio" asp-action="Index" 
+                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                        <i class="fa fa-money w-5" aria-hidden="true"></i> Tipos de Cambio
+                                    </a>
+                                    <div class="border-t border-slate-200 dark:border-slate-700"></div>
+                                }
+                                <a asp-controller="Configuracion" asp-action="Index" 
+                                   class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                    <i class="fa fa-cog w-5" aria-hidden="true"></i> Configuración
+                                </a>
+                                <a asp-controller="Auth" asp-action="Logout" 
+                                   class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold">
+                                    <i class="fa fa-sign-out w-5" aria-hidden="true"></i> Cerrar Sesión
+                                </a>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-900 shadow-2xl z-50 lg:hidden overflow-y-auto">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <h3 class="font-bold text-slate-800 dark:text-white">Menú</h3>
+            <button id="close-mobile-menu" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 space-y-2">
+            <a asp-controller="Home" asp-action="Index" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                <i class="fa fa-dashboard w-5"></i> Dashboard
+            </a>
+            <a asp-controller="Cuentas" asp-action="Index" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                <i class="fa fa-bank w-5"></i> Cuentas
+            </a>
+            <a asp-controller="Transacciones" asp-action="Index" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                <i class="fa fa-history w-5"></i> Historial
+            </a>
+            <a asp-controller="Categorias" asp-action="Index" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                <i class="fa fa-list w-5"></i> Presupuestos
+            </a>
+            <a asp-controller="MovimientosFijos" asp-action="Index" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                <i class="fa fa-repeat w-5"></i> Suscripciones
+            </a>
+            <a asp-controller="CuentasPorCobrar" asp-action="Index" 
+               class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium">
+                <i class="fa fa-users w-5"></i> Deudores
+            </a>
+            
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                <a asp-controller="Transferencias" asp-action="Create" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium">
+                    <i class="fa fa-exchange w-5"></i> Transferir
+                </a>
+                <a asp-controller="Transacciones" asp-action="Create" 
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium">
+                    <span class="text-lg font-bold">+</span> Nuevo Movimiento
+                </a>
+            </div>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - PresupuestoFamiliarApp 
+    <!-- Overlay -->
+    <div id="mobile-menu-overlay" class="hidden fixed inset-0 bg-black/50 z-40 lg:hidden" onclick="closeMobileMenu()"></div>
+
+    <!-- Main Content -->
+    <main role="main" class="container mx-auto px-4 lg:px-6 py-6 lg:py-8">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm mt-12">
+        <div class="container mx-auto px-4 lg:px-6 py-6">
+            <p class="text-center text-slate-600 dark:text-slate-400 text-sm">
+                &copy; 2026 - PresupuestoFamiliarApp
+            </p>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // Leer los mensajes desde el servidor
-            var mensajeExito = '@TempData["Exito"]';
-            var mensajeError = '@TempData["Error"]';
-
-            if (mensajeExito) {
+    @if (TempData["Exito"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
                 Swal.fire({
+                    toast: true,
+                    position: 'top-end',
                     icon: 'success',
                     title: '¡Excelente!',
-                    text: mensajeExito,
-                    timer: 3000, // Se cierra solo en 3 segundos
+                    text: '@Html.Raw(TempData["Exito"])',
                     showConfirmButton: false,
-                    toast: true,
-                    position: 'top-end' // Aparece en la esquina superior derecha
+                    timer: 3000,
+                    timerProgressBar: true
                 });
-            }
+            });
+        </script>
+    }
 
-            if (mensajeError) {
+    @if (TempData["Error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
                 Swal.fire({
                     icon: 'error',
                     title: 'Oops...',
-                    text: mensajeError
+                    text: '@Html.Raw(TempData["Error"])',
+                    confirmButtonColor: '#d33'
                 });
+            });
+        </script>
+    }
+
+    <script>
+        // Dark Mode Toggle
+        document.addEventListener("DOMContentLoaded", function () {
+            const btn = document.getElementById('darkModeToggle');
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+
+            if (!btn || !icon) return;
+
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            html.classList.toggle('dark', currentTheme === 'dark');
+            actualizarIcono(currentTheme);
+
+            btn.addEventListener('click', () => {
+                const isDark = html.classList.toggle('dark');
+                const newTheme = isDark ? 'dark' : 'light';
+                localStorage.setItem('theme', newTheme);
+                actualizarIcono(newTheme);
+            });
+
+            function actualizarIcono(theme) {
+                icon.innerText = theme === 'light' ? '🌙' : '☀️';
             }
         });
+
+        // Dropdown Toggle
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const allDropdowns = document.querySelectorAll('[id$="Dropdown"]');
+            
+            allDropdowns.forEach(d => {
+                if (d.id !== id) d.classList.add('hidden');
+            });
+            
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('[onclick^="toggleDropdown"]') && !event.target.closest('[id$="Dropdown"]')) {
+                document.querySelectorAll('[id$="Dropdown"]').forEach(d => d.classList.add('hidden'));
+            }
+        });
+
+        // Mobile Menu Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const closeMobileMenuBtn = document.getElementById('close-mobile-menu');
+        const mobileMenuOverlay = document.getElementById('mobile-menu-overlay');
+
+        function openMobileMenu() {
+            mobileMenu.classList.add('active');
+            mobileMenuOverlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('active');
+            mobileMenuOverlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        mobileMenuBtn?.addEventListener('click', openMobileMenu);
+        closeMobileMenuBtn?.addEventListener('click', closeMobileMenu);
+        mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

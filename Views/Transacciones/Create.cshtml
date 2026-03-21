@@ -1,78 +1,177 @@
-﻿@model Transaccion // Cambia "Transaccion" si tu modelo tiene otro namespace
+﻿@model Transaccion
 
 @{
     ViewData["Title"] = "Registrar Movimiento";
 }
 
-<h2>Registrar Ingreso o Gasto</h2>
-<hr />
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Registrar Ingreso o Gasto</h2>
+    <p class="text-slate-600 dark:text-slate-400">Registra tus ingresos y gastos para mantener el control de tu dinero</p>
+</div>
 
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create">
-            <div class="form-group mb-3">
-                <label asp-for="Tipo" class="control-label">Tipo de Movimiento</label>
-                <select asp-for="Tipo" class="form-select" id="tipoSelect">
-                    <option value="Ingreso">Ingreso (+)</option>
-                    <option value="Egreso">Gasto (-)</option>
+<div class="max-w-2xl">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="Create" class="space-y-6">
+            <!-- Validation Summary -->
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4 mb-6" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    ⬤
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
+                </div>
+            </div>
+
+            <!-- Tipo de Movimiento -->
+            <div>
+                <label asp-for="Tipo" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    🌐Tipo de Movimiento
+                </label>
+                <select asp-for="Tipo" id="tipoSelect" class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none">
+                    <option value="Ingreso">💰 Ingreso (+)</option>
+                    <option value="Egreso">💸 Gasto (-)</option>
                 </select>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Descripcion" class="control-label">Descripción</label>
-                <input asp-for="Descripcion" class="form-control" placeholder="Ej. Quincena, Supermercado, Cine..." required />
+            <!-- Descripción -->
+            <div>
+                <label asp-for="Descripcion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    📝Descripción
+                </label>
+                <input asp-for="Descripcion" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej. Quincena, Supermercado, Cine..." 
+                       required />
+                <span asp-validation-for="Descripcion" class="text-red-600 text-sm mt-1"></span>
             </div>
 
-            <div class="form-group mb-3 row">
-                <div class="col-md-7">
-                    <label asp-for="Monto" class="control-label fw-bold">Monto</label>
-                    <input asp-for="Monto" type="number" step="0.01" class="form-control text-primary fw-bold" required />
+            <!-- Moneda -->
+            <div>
+                <label asp-for="MonedaTransaccion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    💰Moneda
+                </label>
+                <select asp-for="MonedaTransaccion" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="Html.GetEnumSelectList<Moneda>()">
+                </select>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                    ⬤
+                    Moneda predeterminada según tus preferencias
+                </p>
+            </div>
+
+            <!-- Monto -->
+            <div>
+                <label asp-for="Monto" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    💵Monto
+                </label>
+                <div class="flex items-center gap-2">
+                    <span id="simboloMoneda" class="px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg border-2 border-slate-200 dark:border-slate-600">
+                        @ViewBag.SimboloMoneda
+                    </span>
+                    <input asp-for="Monto" 
+                           type="number" 
+                           step="0.01" 
+                           class="flex-1 px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-2xl font-bold focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                           required />
                 </div>
-                <div class="col-md-5">
-                    <label asp-for="MonedaTransaccion" class="control-label fw-bold">Moneda</label>
-                    <select asp-for="MonedaTransaccion" class="form-select bg-light" asp-items="Html.GetEnumSelectList<Moneda>()"></select>
-                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">El símbolo cambiará automáticamente según la moneda seleccionada</p>
+                <span asp-validation-for="Monto" class="text-red-600 text-sm mt-1"></span>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Fecha" class="control-label">Fecha del Movimiento</label>
-                <input asp-for="Fecha" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+            <!-- Fecha -->
+            <div>
+                <label asp-for="Fecha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    📅Fecha del Movimiento
+                </label>
+                <input asp-for="Fecha" 
+                       type="date" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       value="@DateTime.Now.ToString("yyyy-MM-dd")" 
+                       required />
+                <span asp-validation-for="Fecha" class="text-red-600 text-sm mt-1"></span>
             </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="CuentaId" class="control-label">¿De qué cuenta?</label>
-                <select asp-for="CuentaId" class="form-select" asp-items="ViewBag.CuentaId"></select>
+            <!-- Cuenta -->
+            <div>
+                <label asp-for="CuentaId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    💳¿De qué cuenta?
+                </label>
+                <select asp-for="CuentaId" 
+                        id="CuentaId"
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CuentaId">
+                </select>
+                <span asp-validation-for="CuentaId" class="text-red-600 text-sm mt-1"></span>
             </div>
 
-           <div class="form-group mb-3" id="divCategoria">
-                <label asp-for="CategoriaGastoId" class="control-label">Categoría (Solo para gastos)</label>
-                <select asp-for="CategoriaGastoId" class="form-select" asp-items="ViewBag.CategoriaGastoId">
+            <!-- Categoría -->
+            <div id="divCategoria">
+                <label asp-for="CategoriaGastoId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    🗂️Categoría (Solo para gastos)
+                </label>
+                <select asp-for="CategoriaGastoId" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CategoriaGastoId">
                     <option value="">-- Selecciona una categoría --</option>
                 </select>
             </div>
 
-            <div class="form-group mb-4 p-3 bg-light border-start border-info border-4 rounded" id="divCuotas" style="display: none;">
-                <label class="control-label fw-bold text-info">💳 Opciones de Pago (Tarjeta de Crédito)</label>
-                <select name="numeroCuotas" class="form-select border-info mt-1">
+            <!-- Opciones de Cuotas (Tarjeta de Crédito) -->
+            <div id="divCuotas" class="hidden bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-xl p-4">
+                <label class="block text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                    💳 Opciones de Pago (Tarjeta de Crédito)
+                </label>
+                <select name="numeroCuotas" 
+                        class="w-full px-4 py-3 border-2 border-blue-200 dark:border-blue-700 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition outline-none">
                     <option value="1">1 Cuota (Pago normal este mes)</option>
                     <option value="3">3 Cuotas (Sin intereses)</option>
                     <option value="4">4 Cuotas (Sin intereses)</option>
                     <option value="5">5 Cuotas (Sin intereses)</option>
                 </select>
-                <small class="text-muted d-block mt-1">Se dividirá el monto en registros mensuales separados.</small>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                    ⬤
+                    Se dividirá el monto en registros mensuales separados
+                </p>
             </div>
 
-            <div class="form-group mt-4">
-                <input type="submit" value="Guardar Movimiento" class="btn btn-primary w-100" />
+            <!-- Submit Button -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                <button type="submit" 
+                        class="w-full py-3.5 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-blue-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    💾
+                    Guardar Movimiento
+                </button>
+            </div>
+
+            <!-- Back Link -->
+            <div class="text-center">
+                <a asp-action="Index" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium transition">
+                    ⬅ Volver al historial
+                </a>
             </div>
         </form>
     </div>
 </div>
 
 @section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
         // Obtenemos la lista de IDs que son tarjetas de crédito desde el backend
         var tarjetasIds = @Html.Raw(ViewBag.TarjetasIds ?? "[]");
+
+        // Actualizar el símbolo de moneda dinámicamente
+        document.querySelector('select[name="MonedaTransaccion"]').addEventListener('change', function() {
+            const moneda = this.value;
+            let simbolo = 'S/'; // Por defecto Soles
+
+            if (moneda === '1') { // Dolares
+                simbolo = '$';
+            } else if (moneda === '2') { // Euros
+                simbolo = '€';
+            }
+
+            document.getElementById('simboloMoneda').textContent = simbolo;
+        });
 
         function evaluarMostrarCuotas() {
             var tipoSeleccionado = document.getElementById('tipoSelect').value;
@@ -82,18 +181,18 @@
 
             // 1. Ocultar/Mostrar Categoría
             if (tipoSeleccionado === 'Ingreso') {
-                divCategoria.style.display = 'none';
+                divCategoria.classList.add('hidden');
             } else {
-                divCategoria.style.display = 'block';
+                divCategoria.classList.remove('hidden');
             }
 
             // 2. Ocultar/Mostrar Cuotas (Solo si es Egreso Y es una Tarjeta)
             var esTarjeta = tarjetasIds.includes(cuentaSeleccionada);
-            
+
             if (tipoSeleccionado === 'Egreso' && esTarjeta) {
-                divCuotas.style.display = 'block';
+                divCuotas.classList.remove('hidden');
             } else {
-                divCuotas.style.display = 'none';
+                divCuotas.classList.add('hidden');
                 // Reiniciamos a 1 cuota por seguridad si se oculta
                 document.getElementsByName('numeroCuotas')[0].value = '1';
             }

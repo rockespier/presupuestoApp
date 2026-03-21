@@ -8,7 +8,7 @@ namespace PresupuestoFamiliarApp.Models
         public int Id { get; set; }
 
         [Required]
-        public string Descripcion { get; set; } // Ej: "Sueldo Quincenal", "Alquiler", "Netflix"
+        public string Descripcion { get; set; }
 
         public TipoTransaccion Tipo { get; set; }
 
@@ -17,7 +17,7 @@ namespace PresupuestoFamiliarApp.Models
         public decimal Monto { get; set; }
 
         [Range(1, 31)]
-        public int DiaDelMes { get; set; } // Día exacto en que se cobra/paga (Ej: 15)
+        public int DiaDelMes { get; set; }
 
         public int CuentaId { get; set; }
         public Cuenta? Cuenta { get; set; }
@@ -27,12 +27,16 @@ namespace PresupuestoFamiliarApp.Models
 
         public int EspacioId { get; set; }
 
-        // El cerebro de la operación: sabe cuándo fue la última vez que te lo cobró
         public DateTime? UltimaGeneracion { get; set; }
 
-        // AÑADE ESTA LÍNEA: Fecha límite para generar el cobro
         public DateTime? FechaFin { get; set; }
 
         public bool Activo { get; set; } = true;
+
+        // NUEVA PROPIEDAD: Moneda del movimiento fijo
+        public Moneda MonedaMovimiento { get; set; } = Moneda.Soles;
+
+        // NUEVA PROPIEDAD: Frecuencia de repetición
+        public Frecuencia FrecuenciaRepeticion { get; set; } = Frecuencia.Mensual;
     }
 }

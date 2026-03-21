@@ -1,18 +1,208 @@
 ﻿@model TipoCambio
-<h2>Registrar / Actualizar Tasa de Cambio</h2>
-<hr />
-<form asp-action="Create" class="card p-4 shadow-sm" style="max-width: 500px;">
-    <div class="form-group mb-3">
-        <label class="fw-bold">Moneda de Origen (Ej: Dólares)</label>
-        <select asp-for="MonedaOrigen" class="form-select" asp-items="Html.GetEnumSelectList<Moneda>()"></select>
+
+@{
+    ViewData["Title"] = "Actualizar Tasa de Cambio";
+}
+
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Registrar / Actualizar Tasa de Cambio</h2>
+    <p class="text-slate-600 dark:text-slate-400">Define la tasa de conversión entre dos monedas</p>
+</div>
+
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="Create" class="space-y-6">
+            <!-- Validation Summary -->
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
+                </div>
+            </div>
+
+            <!-- Visual Flow -->
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-700 dark:to-slate-600 rounded-xl p-6">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1 text-center">
+                        <div class="text-4xl mb-2">💵</div>
+                        <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Moneda Origen</p>
+                    </div>
+                    <div class="text-4xl text-primary-500">→</div>
+                    <div class="flex-1 text-center">
+                        <div class="text-4xl mb-2">🇵🇪</div>
+                        <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Moneda Destino</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moneda de Origen -->
+            <div>
+                <label asp-for="MonedaOrigen" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                    <i class="fa fa-money mr-2 text-primary-500"></i>Moneda de Origen
+                </label>
+                
+                <div class="space-y-3">
+                    <!-- Soles Option -->
+                    <label class="flex items-center p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-primary-400 transition">
+                        <input type="radio" name="MonedaOrigen" value="0" 
+                               class="w-5 h-5 text-primary-600 focus:ring-primary-500" />
+                        <div class="ml-4 flex items-center gap-3 flex-1">
+                            <span class="text-3xl">🇵🇪</span>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white">Soles Peruanos (S/)</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">PEN</p>
+                            </div>
+                        </div>
+                    </label>
+                    
+                    <!-- Dólares Option -->
+                    <label class="flex items-center p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-primary-400 transition">
+                        <input type="radio" name="MonedaOrigen" value="1" 
+                               class="w-5 h-5 text-primary-600 focus:ring-primary-500" 
+                               checked />
+                        <div class="ml-4 flex items-center gap-3 flex-1">
+                            <span class="text-3xl">💵</span>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white">Dólares Americanos ($)</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">USD</p>
+                            </div>
+                        </div>
+                    </label>
+                    
+                    <!-- Euros Option -->
+                    <label class="flex items-center p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-primary-400 transition">
+                        <input type="radio" name="MonedaOrigen" value="2" 
+                               class="w-5 h-5 text-primary-600 focus:ring-primary-500" />
+                        <div class="ml-4 flex items-center gap-3 flex-1">
+                            <span class="text-3xl">🇪🇺</span>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white">Euros (€)</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">EUR</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Moneda de Destino -->
+            <div>
+                <label asp-for="MonedaDestino" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                    <i class="fa fa-money mr-2 text-green-500"></i>Moneda de Destino
+                </label>
+                
+                <div class="space-y-3">
+                    <!-- Soles Option -->
+                    <label class="flex items-center p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-green-400 transition">
+                        <input type="radio" name="MonedaDestino" value="0" 
+                               class="w-5 h-5 text-green-600 focus:ring-green-500" 
+                               checked />
+                        <div class="ml-4 flex items-center gap-3 flex-1">
+                            <span class="text-3xl">🇵🇪</span>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white">Soles Peruanos (S/)</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">PEN</p>
+                            </div>
+                        </div>
+                    </label>
+                    
+                    <!-- Dólares Option -->
+                    <label class="flex items-center p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-green-400 transition">
+                        <input type="radio" name="MonedaDestino" value="1" 
+                               class="w-5 h-5 text-green-600 focus:ring-green-500" />
+                        <div class="ml-4 flex items-center gap-3 flex-1">
+                            <span class="text-3xl">💵</span>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white">Dólares Americanos ($)</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">USD</p>
+                            </div>
+                        </div>
+                    </label>
+                    
+                    <!-- Euros Option -->
+                    <label class="flex items-center p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-green-400 transition">
+                        <input type="radio" name="MonedaDestino" value="2" 
+                               class="w-5 h-5 text-green-600 focus:ring-green-500" />
+                        <div class="ml-4 flex items-center gap-3 flex-1">
+                            <span class="text-3xl">🇪🇺</span>
+                            <div>
+                                <p class="font-bold text-slate-800 dark:text-white">Euros (€)</p>
+                                <p class="text-sm text-slate-600 dark:text-slate-400">EUR</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tasa de Conversión -->
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800 rounded-xl p-6">
+                <label asp-for="Tasa" class="block text-sm font-semibold text-amber-900 dark:text-amber-300 mb-2">
+                    <i class="fa fa-calculator mr-2"></i>Tasa de Conversión
+                </label>
+                <p class="text-xs text-amber-800 dark:text-amber-200 mb-3">
+                    ¿A cuánto equivale <strong>1 unidad</strong> de la moneda origen en la moneda destino?
+                </p>
+                <input asp-for="Tasa" 
+                       type="number" 
+                       step="0.0001" 
+                       class="w-full px-4 py-4 border-2 border-amber-300 dark:border-amber-700 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-3xl font-bold text-center focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition outline-none" 
+                       placeholder="Ej: 3.7500" 
+                       required />
+                <p class="text-xs text-amber-800 dark:text-amber-200 mt-2">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    Ejemplo: Si 1 USD = 3.75 PEN, ingresa <strong>3.75</strong>
+                </p>
+                <span asp-validation-for="Tasa" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
+                <button type="submit" 
+                        class="flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i class="fa fa-save"></i>
+                    Guardar Tasa
+                </button>
+                <a asp-action="Index" 
+                   class="flex-1 sm:flex-initial px-6 py-3.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-center flex items-center justify-center gap-2">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
     </div>
-    <div class="form-group mb-3">
-        <label class="fw-bold">Moneda de Destino (Moneda de tu Espacio)</label>
-        <select asp-for="MonedaDestino" class="form-select" asp-items="Html.GetEnumSelectList<Moneda>()"></select>
+
+    <!-- Examples Section -->
+    <div class="mt-6 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-lg p-6">
+        <div class="flex items-start gap-4">
+            <div class="text-3xl">📊</div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-green-900 dark:text-green-300 mb-2">Ejemplos de Tasas</h4>
+                <div class="space-y-2 text-green-800 dark:text-green-200 text-sm">
+                    <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg">
+                        <span><strong>1 USD</strong> (Dólar) →</span>
+                        <span class="font-bold text-green-600 dark:text-green-400">3.75 PEN</span>
+                        <span>(Soles)</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg">
+                        <span><strong>1 EUR</strong> (Euro) →</span>
+                        <span class="font-bold text-green-600 dark:text-green-400">4.10 PEN</span>
+                        <span>(Soles)</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg">
+                        <span><strong>1 EUR</strong> (Euro) →</span>
+                        <span class="font-bold text-green-600 dark:text-green-400">1.09 USD</span>
+                        <span>(Dólar)</span>
+                    </div>
+                </div>
+                <p class="text-xs text-green-700 dark:text-green-300 mt-3">
+                    <i class="fa fa-lightbulb mr-1"></i>
+                    Actualiza las tasas regularmente para mantener conversiones precisas
+                </p>
+            </div>
+        </div>
     </div>
-    <div class="form-group mb-4">
-        <label asp-for="Tasa" class="fw-bold">Tasa (A cuánto equivale 1 unidad del Origen)</label>
-        <input asp-for="Tasa" type="number" step="0.0001" class="form-control" placeholder="Ej: 3.75" required />
-    </div>
-    <button type="submit" class="btn btn-success">Guardar Tasa</button>
-</form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

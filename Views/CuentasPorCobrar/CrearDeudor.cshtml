@@ -1,0 +1,86 @@
+﻿@model PresupuestoFamiliarApp.Models.Deudor
+
+@{
+    ViewData["Title"] = "Nuevo Deudor";
+}
+
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">Registrar Nuevo Deudor</h2>
+    <p class="text-slate-600 dark:text-slate-400">Agrega un nuevo cliente o deudor al sistema</p>
+</div>
+
+<div class="max-w-xl mx-auto">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <form asp-action="CrearDeudor" method="post" class="space-y-6">
+            <!-- Validation Summary -->
+            <div asp-validation-summary="All" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <i class="fa fa-exclamation-circle"></i>
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
+                </div>
+            </div>
+
+            <!-- Nombre -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-user mr-2 text-primary-500"></i>Nombre Completo / Habitación
+                </label>
+                <input asp-for="Nombre" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej: Juan Pérez - Hab 3" 
+                       required />
+                <span asp-validation-for="Nombre" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Teléfono -->
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    <i class="fa fa-phone mr-2 text-primary-500"></i>Teléfono (Opcional)
+                </label>
+                <input asp-for="Telefono" 
+                       type="tel"
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej: +51 999 999 999" />
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1">
+                    <i class="fa fa-info-circle"></i>
+                    Número de contacto para recordatorios
+                </p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
+                <button type="submit" 
+                        class="flex-1 py-3.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    <i class="fa fa-save"></i>
+                    Guardar Deudor
+                </button>
+                <a asp-action="Index" 
+                   class="flex-1 sm:flex-initial px-6 py-3.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition text-center flex items-center justify-center gap-2">
+                    <i class="fa fa-times"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Section -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+        <div class="flex items-start gap-4">
+            <div class="text-3xl">💡</div>
+            <div class="flex-1">
+                <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">Consejos para Registro</h4>
+                <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                    <li>Usa un nombre claro e identificable (ej: "Juan Pérez - Apartamento 3B")</li>
+                    <li>El teléfono es opcional pero útil para enviar recordatorios de pago</li>
+                    <li>Después de crear el deudor, podrás registrar sus deudas y pagos</li>
+                    <li>Ideal para gestionar alquileres de inquilinos o préstamos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

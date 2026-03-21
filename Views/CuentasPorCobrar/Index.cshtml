@@ -1,0 +1,174 @@
+﻿@model IEnumerable<PresupuestoFamiliarApp.Models.Deudor>
+
+@{
+    ViewData["Title"] = "Deudores";
+    var simboloMoneda = ViewBag.SimboloMoneda ?? "S/";
+}
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+            <span>👥</span> Mis Deudores
+        </h2>
+        <p class="text-slate-600 dark:text-slate-400">Administra las cuentas por cobrar de tus clientes y deudores</p>
+    </div>
+    <a asp-action="CrearDeudor" 
+       class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg hover:shadow-xl">
+        <span class="text-xl font-bold">+</span> Nuevo Deudor
+    </a>
+</div>
+
+<!-- Summary Cards -->
+@{
+    var totalDeudores = Model.Count();
+    var totalDeuda = Model.Sum(d => d.CuentasPorCobrar?.Sum(c => c.MontoTotal - c.MontoPagado) ?? 0);
+    var deudoresConDeuda = Model.Count(d => (d.CuentasPorCobrar?.Sum(c => c.MontoTotal - c.MontoPagado) ?? 0) > 0);
+    var promedioDeuda = deudoresConDeuda > 0 ? totalDeuda / deudoresConDeuda : 0;
+}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-primary-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-primary-100">Total Deudores</p>
+            <span class="text-3xl">👥</span>
+        </div>
+        <p class="text-4xl font-bold">@totalDeudores</p>
+        <p class="text-primary-100 text-sm mt-1">Registrados</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-red-100">Total por Cobrar</p>
+            <span class="text-3xl">💰</span>
+        </div>
+        <p class="text-4xl font-bold">@simboloMoneda @totalDeuda.ToString("N0")</p>
+        <p class="text-red-100 text-sm mt-1">En total</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-amber-100">Con Deuda Activa</p>
+            <span class="text-3xl">⚠️</span>
+        </div>
+        <p class="text-4xl font-bold">@deudoresConDeuda</p>
+        <p class="text-amber-100 text-sm mt-1">Deudores</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-purple-100">Promedio de Deuda</p>
+            <span class="text-3xl">📊</span>
+        </div>
+        <p class="text-4xl font-bold">@simboloMoneda @promedioDeuda.ToString("N0")</p>
+        <p class="text-purple-100 text-sm mt-1">Por deudor</p>
+    </div>
+</div>
+
+<!-- Debtors Grid -->
+@if (Model.Any())
+{
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @foreach (var item in Model)
+        {
+            var deudaTotal = item.CuentasPorCobrar?.Sum(c => c.MontoTotal - c.MontoPagado) ?? 0;
+            var cuentasActivas = item.CuentasPorCobrar?.Count(c => c.MontoTotal - c.MontoPagado > 0) ?? 0;
+            var colorBorde = deudaTotal > 0 ? "border-red-500" : "border-green-500";
+            var colorFondo = deudaTotal > 0 ? "from-red-500 to-rose-500" : "from-green-500 to-emerald-500";
+            
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border-l-4 @colorBorde overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-1">
+                <!-- Card Header -->
+                <div class="bg-gradient-to-r @colorFondo p-6 text-white">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold mb-1">@item.Nombre</h3>
+                            @if (!string.IsNullOrEmpty(item.Telefono))
+                            {
+                                <p class="text-sm opacity-90 flex items-center gap-1">
+                                    <i class="fa fa-phone"></i> @item.Telefono
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="text-sm opacity-75 italic">Sin teléfono</p>
+                            }
+                        </div>
+                        <div class="text-4xl opacity-80">
+                            @(deudaTotal > 0 ? "💸" : "✅")
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Body -->
+                <div class="p-6">
+                    <div class="mb-4">
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-1 font-medium">Deuda Total</p>
+                        <p class="text-4xl font-bold @(deudaTotal > 0 ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400")">
+                            @simboloMoneda @deudaTotal.ToString("N2")
+                        </p>
+                    </div>
+                    
+                    @if (cuentasActivas > 0)
+                    {
+                        <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                            <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                <i class="fa fa-exclamation-triangle mr-1"></i>
+                                @cuentasActivas @(cuentasActivas == 1 ? "cuenta pendiente" : "cuentas pendientes")
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <p class="text-sm font-semibold text-green-800 dark:text-green-300">
+                                <i class="fa fa-check-circle mr-1"></i>
+                                Sin deudas pendientes
+                            </p>
+                        </div>
+                    }
+                    
+                    <!-- Action Button -->
+                    <a asp-action="Detalle" asp-route-id="@item.Id" 
+                       class="block w-full text-center px-4 py-3 bg-gradient-to-r @colorFondo text-white font-semibold rounded-lg hover:opacity-90 transition shadow-md">
+                        <i class="fa fa-list mr-2"></i>Ver Deudas / Cobrar
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <!-- Empty State -->
+    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl p-12 text-center">
+        <div class="text-6xl mb-4">👥</div>
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">No hay deudores registrados</h3>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">
+            Comienza a registrar tus clientes y las cuentas por cobrar para llevar un mejor control
+        </p>
+        <a asp-action="CrearDeudor" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg">
+            <span class="text-xl font-bold">+</span> Crear Primer Deudor
+        </a>
+    </div>
+}
+
+<!-- Info Section -->
+<div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+    <div class="flex items-start gap-4">
+        <div class="text-3xl">💡</div>
+        <div class="flex-1">
+            <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">Gestión de Cuentas por Cobrar</h4>
+            <p class="text-blue-800 dark:text-blue-200 text-sm mb-3">
+                Mantén un registro detallado de todas las personas que te deben dinero. 
+                Perfecto para alquileres, préstamos personales o servicios profesionales.
+            </p>
+            <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                <li>Registra múltiples deudas por deudor</li>
+                <li>Lleva un historial completo de pagos</li>
+                <li>Configura fechas de vencimiento y recordatorios</li>
+                <li>Ideal para gestionar alquileres mensuales</li>
+            </ul>
+        </div>
+    </div>
+</div>

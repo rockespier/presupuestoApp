@@ -1,32 +1,160 @@
 ﻿@model IEnumerable<PresupuestoFamiliarApp.Models.Espacio>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>🏢 Gestión de Espacios (Presupuestos)</h2>
-    <a asp-action="Create" class="btn btn-primary fw-bold shadow-sm">+ Nuevo Espacio</a>
+@{
+    ViewData["Title"] = "Espacios";
+}
+
+<!-- Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <div>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
+            <span>🏢</span> Gestión de Espacios
+        </h2>
+        <p class="text-slate-600 dark:text-slate-400">Organiza tus finanzas en diferentes espacios (personal, negocio, familia)</p>
+    </div>
+    <a asp-action="Create" 
+       class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg hover:shadow-xl">
+        <span class="text-xl font-bold">+</span> Nuevo Espacio
+    </a>
 </div>
 
-<div class="card shadow-sm border-0">
-    <table class="table table-hover mb-0">
-        <thead class="table-dark">
-            <tr>
-                <th>Nombre del Espacio</th>
-                <th>Moneda Principal</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td class="fw-bold align-middle">@item.Nombre</td>
-                    <td class="align-middle">
-                        <span class="badge bg-info text-dark fs-6">@item.MonedaPrincipal</span>
-                    </td>
-                    <td class="align-middle">
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning fw-bold">Editar</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+<!-- Summary Cards -->
+@{
+    var totalEspacios = Model.Count();
+    var espaciosConDolares = Model.Count(e => e.MonedaPrincipal == Moneda.Dolares);
+    var espaciosConSoles = Model.Count(e => e.MonedaPrincipal == Moneda.Soles);
+    var espaciosConEuros = Model.Count(e => e.MonedaPrincipal == Moneda.Euros);
+}
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gradient-to-br from-primary-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-primary-100">Total Espacios</p>
+            <span class="text-3xl">🏢</span>
+        </div>
+        <p class="text-4xl font-bold">@totalEspacios</p>
+        <p class="text-primary-100 text-sm mt-1">Configurados</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-green-100">En Soles (S/)</p>
+            <span class="text-3xl">🇵🇪</span>
+        </div>
+        <p class="text-4xl font-bold">@espaciosConSoles</p>
+        <p class="text-green-100 text-sm mt-1">Espacios</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-emerald-100">En Dólares ($)</p>
+            <span class="text-3xl">💵</span>
+        </div>
+        <p class="text-4xl font-bold">@espaciosConDolares</p>
+        <p class="text-emerald-100 text-sm mt-1">Espacios</p>
+    </div>
+    
+    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-semibold uppercase tracking-wider text-blue-100">En Euros (€)</p>
+            <span class="text-3xl">🇪🇺</span>
+        </div>
+        <p class="text-4xl font-bold">@espaciosConEuros</p>
+        <p class="text-blue-100 text-sm mt-1">Espacios</p>
+    </div>
+</div>
+
+<!-- Spaces Grid -->
+@if (Model.Any())
+{
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        @foreach (var item in Model)
+        {
+            var simboloMoneda = item.MonedaPrincipal == Moneda.Dolares ? "💵 $" : 
+                               item.MonedaPrincipal == Moneda.Euros ? "🇪🇺 €" : "🇵🇪 S/";
+            var colorGradiente = item.MonedaPrincipal == Moneda.Dolares ? "from-green-500 to-emerald-500" :
+                                item.MonedaPrincipal == Moneda.Euros ? "from-blue-500 to-indigo-500" : 
+                                "from-amber-500 to-orange-500";
+            
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-2xl transition-all hover:-translate-y-1">
+                <!-- Card Header -->
+                <div class="bg-gradient-to-r @colorGradiente p-6 text-white">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <h3 class="text-2xl font-bold mb-2">@item.Nombre</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-3xl">@simboloMoneda</span>
+                                <span class="text-sm opacity-90">Moneda Principal</span>
+                            </div>
+                        </div>
+                        <div class="text-5xl opacity-60">
+                            🏢
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Body -->
+                <div class="p-6">
+                    <div class="mb-4">
+                        <p class="text-sm text-slate-600 dark:text-slate-400 mb-2 font-medium">Información del Espacio</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">ID:</span>
+                                <span class="font-semibold text-slate-800 dark:text-white">#@item.Id</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                                <span class="text-sm text-slate-600 dark:text-slate-400">Moneda:</span>
+                                <span class="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300">
+                                    @item.MonedaPrincipal
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="space-y-2">
+                        <a asp-action="Edit" asp-route-id="@item.Id" 
+                           class="block w-full text-center px-4 py-3 bg-gradient-to-r @colorGradiente text-white font-semibold rounded-lg hover:opacity-90 transition shadow-md">
+                            <i class="fa fa-edit mr-2"></i>Editar Espacio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <!-- Empty State -->
+    <div class="bg-slate-100 dark:bg-slate-800 rounded-xl p-12 text-center">
+        <div class="text-6xl mb-4">🏢</div>
+        <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-2">No hay espacios registrados</h3>
+        <p class="text-slate-600 dark:text-slate-400 mb-6">
+            Crea diferentes espacios para organizar tus finanzas personales, de negocio o familiares
+        </p>
+        <a asp-action="Create" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-blue-700 transition shadow-lg">
+            <span class="text-xl font-bold">+</span> Crear Primer Espacio
+        </a>
+    </div>
+}
+
+<!-- Info Section -->
+<div class="mt-8 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
+    <div class="flex items-start gap-4">
+        <div class="text-3xl">💡</div>
+        <div class="flex-1">
+            <h4 class="text-lg font-bold text-blue-900 dark:text-blue-300 mb-2">¿Qué son los Espacios?</h4>
+            <p class="text-blue-800 dark:text-blue-200 text-sm mb-3">
+                Los espacios te permiten separar diferentes áreas de tu vida financiera. 
+                Cada espacio tiene su propia moneda, cuentas, transacciones y presupuestos independientes.
+            </p>
+            <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                <li><strong>Personal:</strong> Para tus finanzas personales y gastos del día a día</li>
+                <li><strong>Negocio:</strong> Para gestionar las finanzas de tu empresa o emprendimiento</li>
+                <li><strong>Familiar:</strong> Para administrar los gastos compartidos del hogar</li>
+                <li><strong>Inversiones:</strong> Para llevar un control de tus portafolios e inversiones</li>
+            </ul>
+        </div>
+    </div>
 </div>
