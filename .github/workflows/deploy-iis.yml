@@ -10,7 +10,7 @@ env:
   PUBLISH_PATH: './publish'
   IIS_SITE_NAME: 'PresupuestoFamiliarApp'
   IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
-  IIS_PHYSICAL_PATH: 'C:\Publish\PresupuestoFamiliarApp'
+  IIS_PHYSICAL_PATH: 'C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com'  # ✅ Nueva ruta
 
 jobs:
   build-and-deploy:
@@ -20,11 +20,108 @@ jobs:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🔧 Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: 🔍 Verify Service Worker Version Update
+      shell: powershell
+      run: |
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "   VERIFICACIÓN DE VERSIÓN SERVICE WORKER" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host ""
         
+        $swPath = "wwwroot\service-worker.js"
+        
+        # Verificar si el archivo existe
+        if (!(Test-Path $swPath)) {
+          Write-Host "❌ ERROR: No se encontró $swPath" -ForegroundColor Red
+          exit 1
+        }
+        
+        # Leer el contenido actual
+        $currentContent = Get-Content $swPath -Raw
+        
+        # Extraer las versiones actuales
+        if ($currentContent -match "const CACHE_NAME = '([^']+)'") {
+          $currentCacheName = $matches[1]
+          Write-Host "📦 CACHE_NAME actual: $currentCacheName" -ForegroundColor Cyan
+        } else {
+          Write-Host "⚠️ No se pudo extraer CACHE_NAME" -ForegroundColor Yellow
+          $currentCacheName = $null
+        }
+        
+        if ($currentContent -match "const RUNTIME_CACHE = '([^']+)'") {
+          $currentRuntimeCache = $matches[1]
+          Write-Host "📦 RUNTIME_CACHE actual: $currentRuntimeCache" -ForegroundColor Cyan
+        } else {
+          Write-Host "⚠️ No se pudo extraer RUNTIME_CACHE" -ForegroundColor Yellow
+          $currentRuntimeCache = $null
+        }
+        
+        Write-Host ""
+        
+        # Intentar obtener la versión anterior (del commit anterior)
+        try {
+          $previousContent = git show HEAD~1:$swPath 2>$null
+          
+          if ($LASTEXITCODE -eq 0 -and $previousContent) {
+            # Extraer versiones del commit anterior
+            $previousCacheName = $null
+            $previousRuntimeCache = $null
+            
+            if ($previousContent -match "const CACHE_NAME = '([^']+)'") {
+              $previousCacheName = $matches[1]
+              Write-Host "📦 CACHE_NAME anterior: $previousCacheName" -ForegroundColor Gray
+            }
+            
+            if ($previousContent -match "const RUNTIME_CACHE = '([^']+)'") {
+              $previousRuntimeCache = $matches[1]
+              Write-Host "📦 RUNTIME_CACHE anterior: $previousRuntimeCache" -ForegroundColor Gray
+            }
+            
+            Write-Host ""
+            
+            # Comparar versiones
+            $cacheChanged = $currentCacheName -ne $previousCacheName
+            $runtimeChanged = $currentRuntimeCache -ne $previousRuntimeCache
+            
+            if ($cacheChanged -or $runtimeChanged) {
+              Write-Host "✅ VERSIÓN ACTUALIZADA CORRECTAMENTE" -ForegroundColor Green
+              Write-Host ""
+              
+              if ($cacheChanged) {
+                Write-Host "   ✓ CACHE_NAME cambió: $previousCacheName → $currentCacheName" -ForegroundColor Green
+              }
+              if ($runtimeChanged) {
+                Write-Host "   ✓ RUNTIME_CACHE cambió: $previousRuntimeCache → $currentRuntimeCache" -ForegroundColor Green
+              }
+              
+              Write-Host ""
+              Write-Host "🎉 El Service Worker será actualizado en los clientes" -ForegroundColor Green
+            } else {
+              Write-Host "⚠️ ADVERTENCIA: Las versiones del Service Worker NO han cambiado" -ForegroundColor Yellow
+              Write-Host ""
+              Write-Host "Si has modificado archivos estáticos (CSS, JS, imágenes)," -ForegroundColor Yellow
+              Write-Host "debes actualizar la versión en service-worker.js:" -ForegroundColor Yellow
+              Write-Host ""
+              Write-Host "  const CACHE_NAME = 'presupuesto-app-v3';         // Incrementar versión" -ForegroundColor Cyan
+              Write-Host "  const RUNTIME_CACHE = 'presupuesto-runtime-v3';  // Incrementar versión" -ForegroundColor Cyan
+              Write-Host ""
+              Write-Host "Esto asegura que los usuarios reciban las últimas actualizaciones." -ForegroundColor Yellow
+              Write-Host ""
+              Write-Host "⏩ Continuando con el deployment..." -ForegroundColor Yellow
+            }
+          } else {
+            Write-Host "ℹ️ No se puede comparar con versión anterior (primer commit o archivo nuevo)" -ForegroundColor Cyan
+            Write-Host "✓ Versión actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
+          }
+        } catch {
+          Write-Host "ℹ️ No se pudo obtener la versión anterior del Service Worker" -ForegroundColor Cyan
+          Write-Host "✓ Versión actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
+        }
+        
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host ""
+      
     - name: 📦 Restore dependencies
       run: dotnet restore
       working-directory: .
@@ -110,7 +207,8 @@ jobs:
         $criticalFiles = @(
           "PresupuestoFamiliarApp.dll",
           "web.config",
-          "appsettings.json"
+          "appsettings.json",
+          "wwwroot\service-worker.js"
         )
         
         foreach ($file in $criticalFiles) {
@@ -193,7 +291,7 @@ jobs:
         Write-Host ""
         Write-Host "Testing HTTP response..."
         try {
-          $response = Invoke-WebRequest -Uri "http://localhost" -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
+          $response = Invoke-WebRequest -Uri "http://presupuesto.gestionaminegocio.com" -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
           
           if ($response.StatusCode -eq 200) {
             Write-Host "✓ Application is responding (HTTP 200 OK)"
@@ -203,6 +301,7 @@ jobs:
         } catch {
           Write-Host "⚠️ Could not reach application: $($_.Exception.Message)"
           Write-Host "   The application may still be starting up..."
+          Write-Host "   Or DNS may not be configured yet for presupuesto.gestionaminegocio.com"
         }
         
         Write-Host ""
@@ -211,6 +310,7 @@ jobs:
         Write-Host "Deployed to: ${{ env.IIS_PHYSICAL_PATH }}"
         Write-Host "App Pool: ${{ env.IIS_APP_POOL }}"
         Write-Host "Website: ${{ env.IIS_SITE_NAME }}"
+        Write-Host "URL: http://presupuesto.gestionaminegocio.com"
         Write-Host "================================================"
         
     - name: 📊 Deployment Summary
@@ -227,4 +327,6 @@ jobs:
         Write-Host "Commit Message: ${{ github.event.head_commit.message }}"
         Write-Host "Triggered by: ${{ github.actor }}"
         Write-Host "Deployment Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+        Write-Host "Target Path: ${{ env.IIS_PHYSICAL_PATH }}"
+        Write-Host "Public URL: http://presupuesto.gestionaminegocio.com"
         Write-Host "============================================"
