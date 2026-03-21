@@ -11,6 +11,7 @@ env:
   IIS_SITE_NAME: 'PresupuestoFamiliarApp'
   IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
   IIS_PHYSICAL_PATH: 'C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com'
+  DOTNET_ROOT: 'C:\Program Files\dotnet'
 
 jobs:
   build-and-deploy:
@@ -20,21 +21,44 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Setup Environment
+      shell: powershell
+      run: |
+        Write-Host "Setting up environment variables"
+        $env:PATH = "C:\Program Files\dotnet;$env:PATH"
+        $env:DOTNET_ROOT = "C:\Program Files\dotnet"
+        
+        Write-Host "Verifying dotnet installation"
+        & "C:\Program Files\dotnet\dotnet.exe" --version
+        & "C:\Program Files\dotnet\dotnet.exe" --list-runtimes
+      
     - name: Restore dependencies
-      run: dotnet restore
+      shell: powershell
+      run: |
+        Write-Host "Restoring dependencies..."
+        & "C:\Program Files\dotnet\dotnet.exe" restore
       working-directory: .
       
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      shell: powershell
+      run: |
+        Write-Host "Building application..."
+        & "C:\Program Files\dotnet\dotnet.exe" build --configuration Release --no-restore
       working-directory: .
       
     - name: Run tests
-      run: dotnet test --no-build --verbosity normal --configuration Release
+      shell: powershell
+      run: |
+        Write-Host "Running tests..."
+        & "C:\Program Files\dotnet\dotnet.exe" test --no-build --verbosity normal --configuration Release
       working-directory: .
       continue-on-error: true
       
     - name: Publish
-      run: dotnet publish --configuration Release --output ${{ env.PUBLISH_PATH }} --no-build
+      shell: powershell
+      run: |
+        Write-Host "Publishing application..."
+        & "C:\Program Files\dotnet\dotnet.exe" publish --configuration Release --output "${{ env.PUBLISH_PATH }}" --no-build
       working-directory: .
       
     - name: Stop IIS App Pool
