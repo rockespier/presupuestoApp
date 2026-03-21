@@ -20,7 +20,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 2  # Necesitamos al menos 2 commits para comparar
+        fetch-depth: 2
       
     - name: Verify Service Worker Version Update
       shell: powershell
@@ -32,16 +32,12 @@ jobs:
         
         $swPath = "wwwroot\service-worker.js"
         
-        # Verificar si el archivo existe
         if (!(Test-Path $swPath)) {
           Write-Host "ERROR: No se encontro $swPath" -ForegroundColor Red
           exit 1
         }
         
-        # Leer el contenido actual
         $currentContent = Get-Content $swPath -Raw
-        
-        # Extraer las versiones actuales usando regex escapado correctamente
         $cachePattern = "const CACHE_NAME = '([^']+)'"
         $runtimePattern = "const RUNTIME_CACHE = '([^']+)'"
         
@@ -63,68 +59,54 @@ jobs:
         
         Write-Host ""
         
-        # Intentar obtener la version anterior
+        # Intentar obtener version anterior - version simplificada
+        $previousCacheName = $null
+        $previousRuntimeCache = $null
+        
         try {
-          $gitOutput = git show HEAD~1:$swPath 2>&1
+          $ErrorActionPreference = 'SilentlyContinue'
+          $previousContent = git show "HEAD~1:$swPath" 2>$null
           
-          if ($LASTEXITCODE -eq 0 -and $gitOutput) {
-            $previousContent = $gitOutput -join "`n"
+          if ($previousContent) {
+            $previousContentStr = $previousContent -join "`n"
             
-            # Extraer versiones del commit anterior
-            $previousCacheName = $null
-            $previousRuntimeCache = $null
-            
-            if ($previousContent -match $cachePattern) {
+            if ($previousContentStr -match $cachePattern) {
               $previousCacheName = $matches[1]
               Write-Host "CACHE_NAME anterior: $previousCacheName" -ForegroundColor Gray
             }
             
-            if ($previousContent -match $runtimePattern) {
+            if ($previousContentStr -match $runtimePattern) {
               $previousRuntimeCache = $matches[1]
               Write-Host "RUNTIME_CACHE anterior: $previousRuntimeCache" -ForegroundColor Gray
             }
             
             Write-Host ""
             
-            # Comparar versiones
             $cacheChanged = $currentCacheName -ne $previousCacheName
             $runtimeChanged = $currentRuntimeCache -ne $previousRuntimeCache
             
             if ($cacheChanged -or $runtimeChanged) {
               Write-Host "VERSION ACTUALIZADA CORRECTAMENTE" -ForegroundColor Green
-              Write-Host ""
-              
               if ($cacheChanged) {
-                Write-Host "   CACHE_NAME cambio: $previousCacheName -> $currentCacheName" -ForegroundColor Green
+                Write-Host "   CACHE_NAME: $previousCacheName -> $currentCacheName" -ForegroundColor Green
               }
               if ($runtimeChanged) {
-                Write-Host "   RUNTIME_CACHE cambio: $previousRuntimeCache -> $currentRuntimeCache" -ForegroundColor Green
+                Write-Host "   RUNTIME_CACHE: $previousRuntimeCache -> $currentRuntimeCache" -ForegroundColor Green
               }
-              
-              Write-Host ""
-              Write-Host "El Service Worker sera actualizado en los clientes" -ForegroundColor Green
             } else {
-              Write-Host "ADVERTENCIA: Las versiones del Service Worker NO han cambiado" -ForegroundColor Yellow
-              Write-Host ""
-              Write-Host "Si has modificado archivos estaticos (CSS, JS, imagenes)," -ForegroundColor Yellow
-              Write-Host "debes actualizar la version en service-worker.js:" -ForegroundColor Yellow
-              Write-Host ""
-              Write-Host "  const CACHE_NAME = 'presupuesto-app-v4';" -ForegroundColor Cyan
-              Write-Host "  const RUNTIME_CACHE = 'presupuesto-runtime-v4';" -ForegroundColor Cyan
-              Write-Host ""
-              Write-Host "Esto asegura que los usuarios reciban las ultimas actualizaciones." -ForegroundColor Yellow
-              Write-Host ""
-              Write-Host "Continuando con el deployment..." -ForegroundColor Yellow
+              Write-Host "ADVERTENCIA: Las versiones NO han cambiado" -ForegroundColor Yellow
+              Write-Host "Si modificaste CSS/JS, actualiza la version en service-worker.js" -ForegroundColor Yellow
             }
           } else {
-            Write-Host "No se puede comparar con version anterior (primer commit o archivo nuevo)" -ForegroundColor Cyan
+            Write-Host "Primer commit o archivo nuevo" -ForegroundColor Cyan
             Write-Host "Version actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
           }
         } catch {
-          Write-Host "No se pudo obtener la version anterior del Service Worker" -ForegroundColor Cyan
+          Write-Host "No se pudo comparar con version anterior" -ForegroundColor Cyan
           Write-Host "Version actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
         }
         
+        $ErrorActionPreference = 'Continue'
         Write-Host ""
         Write-Host "============================================" -ForegroundColor Cyan
         Write-Host ""
@@ -180,7 +162,6 @@ jobs:
           Copy-Item -Path $destination -Destination $backupPath -Recurse -Force
           Write-Host "Backup created successfully"
           
-          # Limpiar backups antiguos (mas de 7 dias)
           $oldBackups = Get-ChildItem "C:\Backups" | Where-Object {
             $_.Name -like "PresupuestoApp_*" -and $_.CreationTime -lt (Get-Date).AddDays(-7)
           }
@@ -202,15 +183,12 @@ jobs:
         Write-Host "Deploying from: ${{ env.PUBLISH_PATH }}"
         Write-Host "Deploying to: $destination"
         
-        # Crear directorio si no existe
         New-Item -Path $destination -ItemType Directory -Force | Out-Null
         
-        # Copiar archivos nuevos
         Write-Host "Copying files..."
         Copy-Item -Path $source -Destination $destination -Recurse -Force
         Write-Host "Files deployed successfully"
         
-        # Verificar que los archivos criticos existen
         $criticalFiles = @(
           "PresupuestoFamiliarApp.dll",
           "web.config",
@@ -234,18 +212,15 @@ jobs:
         
         Write-Host "Setting permissions on: $path"
         
-        # Dar permisos al Application Pool Identity
         icacls $path /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)RX" /T | Out-Null
         Write-Host "Read/Execute permissions set for App Pool"
         
-        # Dar permisos de escritura a wwwroot
         $wwwrootPath = Join-Path $path "wwwroot"
         if (Test-Path $wwwrootPath) {
           icacls $wwwrootPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
           Write-Host "Write permissions set for wwwroot"
         }
         
-        # Crear y dar permisos a carpeta de logs
         $logsPath = Join-Path $path "logs"
         New-Item -Path $logsPath -ItemType Directory -Force | Out-Null
         icacls $logsPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
@@ -278,7 +253,6 @@ jobs:
       run: |
         Import-Module WebAdministration
         
-        # Verificar estado del App Pool
         if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
           $poolState = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
           Write-Host "App Pool State: $poolState"
@@ -288,13 +262,11 @@ jobs:
           }
         }
         
-        # Verificar estado del sitio web
         if (Test-Path "IIS:\Sites\${{ env.IIS_SITE_NAME }}") {
           $siteState = (Get-WebsiteState -Name "${{ env.IIS_SITE_NAME }}").Value
           Write-Host "Website State: $siteState"
         }
         
-        # Intentar hacer una peticion HTTP
         Write-Host ""
         Write-Host "Testing HTTP response..."
         try {
@@ -308,7 +280,6 @@ jobs:
         } catch {
           Write-Host "Could not reach application: $($_.Exception.Message)"
           Write-Host "The application may still be starting up..."
-          Write-Host "Or DNS may not be configured yet for presupuesto.gestionaminegocio.com"
         }
         
         Write-Host ""
