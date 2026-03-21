@@ -6,12 +6,10 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '9.0.x'
   PUBLISH_PATH: './publish'
   IIS_SITE_NAME: 'PresupuestoFamiliarApp'
   IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
   IIS_PHYSICAL_PATH: 'C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com'
-  DOTNET_ROOT: 'C:\Program Files\dotnet'
 
 jobs:
   build-and-deploy:
@@ -21,47 +19,88 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Environment
+    - name: Find and Setup dotnet
       shell: powershell
       run: |
-        Write-Host "Setting up environment variables"
-        $env:PATH = "C:\Program Files\dotnet;$env:PATH"
-        $env:DOTNET_ROOT = "C:\Program Files\dotnet"
+        Write-Host "Searching for dotnet installation..." -ForegroundColor Cyan
         
-        Write-Host "Verifying dotnet installation"
-        & "C:\Program Files\dotnet\dotnet.exe" --version
-        & "C:\Program Files\dotnet\dotnet.exe" --list-runtimes
+        # Buscar dotnet en ubicaciones comunes
+        $possiblePaths = @(
+          "C:\Program Files\dotnet\dotnet.exe",
+          "C:\Program Files (x86)\dotnet\dotnet.exe",
+          "$env:ProgramFiles\dotnet\dotnet.exe",
+          "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"
+        )
+        
+        $dotnetPath = $null
+        foreach ($path in $possiblePaths) {
+          if (Test-Path $path) {
+            $dotnetPath = $path
+            Write-Host "Found dotnet at: $path" -ForegroundColor Green
+            break
+          }
+        }
+        
+        if (-not $dotnetPath) {
+          # Buscar en PATH
+          $dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
+          if ($dotnetCmd) {
+            $dotnetPath = $dotnetCmd.Source
+            Write-Host "Found dotnet in PATH: $dotnetPath" -ForegroundColor Green
+          }
+        }
+        
+        if (-not $dotnetPath) {
+          Write-Host "ERROR: dotnet not found in any location!" -ForegroundColor Red
+          Write-Host "Please install .NET 9.0 Hosting Bundle on the server" -ForegroundColor Yellow
+          exit 1
+        }
+        
+        # Guardar la ruta para los siguientes pasos
+        Write-Host "Setting DOTNET_EXE environment variable" -ForegroundColor Cyan
+        "DOTNET_EXE=$dotnetPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        
+        # Verificar version
+        Write-Host "Dotnet version:" -ForegroundColor Cyan
+        & $dotnetPath --version
+        
+        Write-Host "Runtimes installed:" -ForegroundColor Cyan
+        & $dotnetPath --list-runtimes
       
     - name: Restore dependencies
       shell: powershell
       run: |
-        Write-Host "Restoring dependencies..."
-        & "C:\Program Files\dotnet\dotnet.exe" restore
+        Write-Host "Restoring dependencies..." -ForegroundColor Cyan
+        Write-Host "Using dotnet: $env:DOTNET_EXE" -ForegroundColor Gray
+        & $env:DOTNET_EXE restore
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "ERROR: Restore failed with exit code $LASTEXITCODE" -ForegroundColor Red
+          exit $LASTEXITCODE
+        }
       working-directory: .
       
     - name: Build
       shell: powershell
       run: |
-        Write-Host "Building application..."
-        & "C:\Program Files\dotnet\dotnet.exe" build --configuration Release --no-restore
+        Write-Host "Building application..." -ForegroundColor Cyan
+        & $env:DOTNET_EXE build --configuration Release --no-restore
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "ERROR: Build failed with exit code $LASTEXITCODE" -ForegroundColor Red
+          exit $LASTEXITCODE
+        }
       working-directory: .
       
     - name: Run tests (if available)
       shell: powershell
       run: |
-        Write-Host "Checking for test projects..."
+        Write-Host "Checking for test projects..." -ForegroundColor Cyan
         $testProjects = Get-ChildItem -Path . -Filter "*.Tests.csproj" -Recurse
         
         if ($testProjects.Count -eq 0) {
           Write-Host "No test projects found - skipping tests" -ForegroundColor Yellow
         } else {
           Write-Host "Running tests..." -ForegroundColor Cyan
-          try {
-            & "C:\Program Files\dotnet\dotnet.exe" test --no-build --verbosity normal --configuration Release
-            Write-Host "Tests completed" -ForegroundColor Green
-          } catch {
-            Write-Host "Tests failed, but continuing deployment" -ForegroundColor Yellow
-          }
+          & $env:DOTNET_EXE test --no-build --verbosity normal --configuration Release
         }
       working-directory: .
       continue-on-error: true
@@ -69,15 +108,19 @@ jobs:
     - name: Publish
       shell: powershell
       run: |
-        Write-Host "Publishing application..."
-        & "C:\Program Files\dotnet\dotnet.exe" publish --configuration Release --output "${{ env.PUBLISH_PATH }}" --no-build
+        Write-Host "Publishing application..." -ForegroundColor Cyan
+        & $env:DOTNET_EXE publish --configuration Release --output "${{ env.PUBLISH_PATH }}" --no-build
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "ERROR: Publish failed with exit code $LASTEXITCODE" -ForegroundColor Red
+          exit $LASTEXITCODE
+        }
       working-directory: .
       
     - name: Stop IIS App Pool
       shell: powershell
       run: |
         Import-Module WebAdministration
-        Write-Host "Stopping App Pool: ${{ env.IIS_APP_POOL }}"
+        Write-Host "Stopping App Pool: ${{ env.IIS_APP_POOL }}" -ForegroundColor Cyan
         
         if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
           $state = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
@@ -86,12 +129,12 @@ jobs:
           if ($state -eq "Started") {
             Stop-WebAppPool -Name "${{ env.IIS_APP_POOL }}"
             Start-Sleep -Seconds 5
-            Write-Host "App Pool stopped successfully"
+            Write-Host "App Pool stopped successfully" -ForegroundColor Green
           } else {
             Write-Host "App Pool was already stopped"
           }
         } else {
-          Write-Host "App Pool not found - will be created on first deployment"
+          Write-Host "App Pool not found - will be created on first deployment" -ForegroundColor Yellow
         }
         
     - name: Backup Previous Deployment
@@ -102,10 +145,10 @@ jobs:
         $backupPath = "C:\Backups\PresupuestoApp_$timestamp"
         
         if (Test-Path $destination) {
-          Write-Host "Creating backup at: $backupPath"
+          Write-Host "Creating backup at: $backupPath" -ForegroundColor Cyan
           New-Item -Path "C:\Backups" -ItemType Directory -Force | Out-Null
           Copy-Item -Path $destination -Destination $backupPath -Recurse -Force
-          Write-Host "Backup created successfully"
+          Write-Host "Backup created successfully" -ForegroundColor Green
           
           $oldBackups = Get-ChildItem "C:\Backups" | Where-Object {
             $_.Name -like "PresupuestoApp_*" -and $_.CreationTime -lt (Get-Date).AddDays(-7)
@@ -113,10 +156,10 @@ jobs:
           
           if ($oldBackups) {
             $oldBackups | Remove-Item -Recurse -Force
-            Write-Host "Cleaned up $($oldBackups.Count) old backup(s)"
+            Write-Host "Cleaned up $($oldBackups.Count) old backup(s)" -ForegroundColor Green
           }
         } else {
-          Write-Host "No previous deployment found, skipping backup"
+          Write-Host "No previous deployment found, skipping backup" -ForegroundColor Yellow
         }
         
     - name: Deploy to IIS
@@ -125,14 +168,14 @@ jobs:
         $source = "${{ env.PUBLISH_PATH }}\*"
         $destination = "${{ env.IIS_PHYSICAL_PATH }}"
         
-        Write-Host "Deploying from: ${{ env.PUBLISH_PATH }}"
-        Write-Host "Deploying to: $destination"
+        Write-Host "Deploying from: ${{ env.PUBLISH_PATH }}" -ForegroundColor Cyan
+        Write-Host "Deploying to: $destination" -ForegroundColor Cyan
         
         New-Item -Path $destination -ItemType Directory -Force | Out-Null
         
-        Write-Host "Copying files..."
+        Write-Host "Copying files..." -ForegroundColor Cyan
         Copy-Item -Path $source -Destination $destination -Recurse -Force
-        Write-Host "Files deployed successfully"
+        Write-Host "Files deployed successfully" -ForegroundColor Green
         
         $criticalFiles = @(
           "PresupuestoFamiliarApp.dll",
@@ -140,12 +183,13 @@ jobs:
           "appsettings.json"
         )
         
+        Write-Host "Verifying critical files..." -ForegroundColor Cyan
         foreach ($file in $criticalFiles) {
           $filePath = Join-Path $destination $file
           if (Test-Path $filePath) {
-            Write-Host "$file exists"
+            Write-Host "  [OK] $file" -ForegroundColor Green
           } else {
-            Write-Host "WARNING: $file not found!"
+            Write-Host "  [MISSING] $file" -ForegroundColor Red
           }
         }
         
@@ -154,42 +198,42 @@ jobs:
       run: |
         $path = "${{ env.IIS_PHYSICAL_PATH }}"
         
-        Write-Host "Setting permissions on: $path"
+        Write-Host "Setting permissions on: $path" -ForegroundColor Cyan
         
         icacls $path /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)RX" /T | Out-Null
-        Write-Host "Read/Execute permissions set for App Pool"
+        Write-Host "Read/Execute permissions set for App Pool" -ForegroundColor Green
         
         $wwwrootPath = Join-Path $path "wwwroot"
         if (Test-Path $wwwrootPath) {
           icacls $wwwrootPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
-          Write-Host "Write permissions set for wwwroot"
+          Write-Host "Write permissions set for wwwroot" -ForegroundColor Green
         }
         
         $logsPath = Join-Path $path "logs"
         New-Item -Path $logsPath -ItemType Directory -Force | Out-Null
         icacls $logsPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
-        Write-Host "Logs directory created and permissions set"
+        Write-Host "Logs directory created and permissions set" -ForegroundColor Green
         
     - name: Start IIS App Pool
       shell: powershell
       run: |
         Import-Module WebAdministration
-        Write-Host "Starting App Pool: ${{ env.IIS_APP_POOL }}"
+        Write-Host "Starting App Pool: ${{ env.IIS_APP_POOL }}" -ForegroundColor Cyan
         
         if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
           Start-WebAppPool -Name "${{ env.IIS_APP_POOL }}"
           Start-Sleep -Seconds 5
           
           $state = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
-          Write-Host "App Pool state: $state"
+          Write-Host "App Pool state: $state" -ForegroundColor Cyan
           
           if ($state -eq "Started") {
-            Write-Host "App Pool started successfully"
+            Write-Host "App Pool started successfully" -ForegroundColor Green
           } else {
-            Write-Host "App Pool state is: $state"
+            Write-Host "WARNING: App Pool state is: $state" -ForegroundColor Yellow
           }
         } else {
-          Write-Host "App Pool not found - please configure IIS manually"
+          Write-Host "WARNING: App Pool not found - please configure IIS manually" -ForegroundColor Yellow
         }
         
     - name: Verify Deployment
@@ -197,43 +241,47 @@ jobs:
       run: |
         Import-Module WebAdministration
         
+        Write-Host "Verifying deployment..." -ForegroundColor Cyan
+        
         if (Test-Path "IIS:\AppPools\${{ env.IIS_APP_POOL }}") {
           $poolState = (Get-WebAppPoolState -Name "${{ env.IIS_APP_POOL }}").Value
-          Write-Host "App Pool State: $poolState"
+          Write-Host "App Pool State: $poolState" -ForegroundColor Cyan
           
           if ($poolState -ne "Started") {
+            Write-Host "ERROR: App Pool failed to start!" -ForegroundColor Red
             throw "App Pool failed to start properly!"
           }
         }
         
         if (Test-Path "IIS:\Sites\${{ env.IIS_SITE_NAME }}") {
           $siteState = (Get-WebsiteState -Name "${{ env.IIS_SITE_NAME }}").Value
-          Write-Host "Website State: $siteState"
+          Write-Host "Website State: $siteState" -ForegroundColor Cyan
         }
         
         Write-Host ""
-        Write-Host "Testing HTTP response..."
+        Write-Host "Testing HTTP response..." -ForegroundColor Cyan
         try {
           $response = Invoke-WebRequest -Uri "http://presupuesto.gestionaminegocio.com" -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
           
           if ($response.StatusCode -eq 200) {
-            Write-Host "Application is responding (HTTP 200 OK)"
+            Write-Host "Application is responding (HTTP 200 OK)" -ForegroundColor Green
           } else {
-            Write-Host "Application returned status: $($response.StatusCode)"
+            Write-Host "Application returned status: $($response.StatusCode)" -ForegroundColor Yellow
           }
         } catch {
-          Write-Host "Could not reach application: $($_.Exception.Message)"
-          Write-Host "The application may still be starting up..."
+          Write-Host "Could not reach application: $($_.Exception.Message)" -ForegroundColor Yellow
+          Write-Host "The application may still be starting up or DNS not configured" -ForegroundColor Yellow
         }
         
         Write-Host ""
-        Write-Host "Deployment completed successfully!"
-        Write-Host "================================================"
+        Write-Host "================================================" -ForegroundColor Green
+        Write-Host "   DEPLOYMENT COMPLETED SUCCESSFULLY!" -ForegroundColor Green
+        Write-Host "================================================" -ForegroundColor Green
         Write-Host "Deployed to: ${{ env.IIS_PHYSICAL_PATH }}"
         Write-Host "App Pool: ${{ env.IIS_APP_POOL }}"
         Write-Host "Website: ${{ env.IIS_SITE_NAME }}"
         Write-Host "URL: http://presupuesto.gestionaminegocio.com"
-        Write-Host "================================================"
+        Write-Host "================================================" -ForegroundColor Green
         
     - name: Deployment Summary
       if: always()
@@ -251,4 +299,5 @@ jobs:
         Write-Host "Deployment Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
         Write-Host "Target Path: ${{ env.IIS_PHYSICAL_PATH }}"
         Write-Host "Public URL: http://presupuesto.gestionaminegocio.com"
+        Write-Host "Dotnet Used: $env:DOTNET_EXE"
         Write-Host "============================================"
