@@ -10,21 +10,23 @@ env:
   PUBLISH_PATH: './publish'
   IIS_SITE_NAME: 'PresupuestoFamiliarApp'
   IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
-  IIS_PHYSICAL_PATH: 'C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com'  # ✅ Nueva ruta
+  IIS_PHYSICAL_PATH: 'C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com'
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted  # Usa el self-hosted runner instalado en tu servidor
+    runs-on: self-hosted
     
     steps:
-    - name: 📥 Checkout code
+    - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 2  # Necesitamos al menos 2 commits para comparar
       
-    - name: 🔍 Verify Service Worker Version Update
+    - name: Verify Service Worker Version Update
       shell: powershell
       run: |
         Write-Host "============================================" -ForegroundColor Cyan
-        Write-Host "   VERIFICACIÓN DE VERSIÓN SERVICE WORKER" -ForegroundColor Cyan
+        Write-Host "   VERIFICACION DE VERSION SERVICE WORKER" -ForegroundColor Cyan
         Write-Host "============================================" -ForegroundColor Cyan
         Write-Host ""
         
@@ -32,49 +34,54 @@ jobs:
         
         # Verificar si el archivo existe
         if (!(Test-Path $swPath)) {
-          Write-Host "❌ ERROR: No se encontró $swPath" -ForegroundColor Red
+          Write-Host "ERROR: No se encontro $swPath" -ForegroundColor Red
           exit 1
         }
         
         # Leer el contenido actual
         $currentContent = Get-Content $swPath -Raw
         
-        # Extraer las versiones actuales
-        if ($currentContent -match "const CACHE_NAME = '([^']+)'") {
+        # Extraer las versiones actuales usando regex escapado correctamente
+        $cachePattern = "const CACHE_NAME = '([^']+)'"
+        $runtimePattern = "const RUNTIME_CACHE = '([^']+)'"
+        
+        if ($currentContent -match $cachePattern) {
           $currentCacheName = $matches[1]
-          Write-Host "📦 CACHE_NAME actual: $currentCacheName" -ForegroundColor Cyan
+          Write-Host "CACHE_NAME actual: $currentCacheName" -ForegroundColor Cyan
         } else {
-          Write-Host "⚠️ No se pudo extraer CACHE_NAME" -ForegroundColor Yellow
+          Write-Host "No se pudo extraer CACHE_NAME" -ForegroundColor Yellow
           $currentCacheName = $null
         }
         
-        if ($currentContent -match "const RUNTIME_CACHE = '([^']+)'") {
+        if ($currentContent -match $runtimePattern) {
           $currentRuntimeCache = $matches[1]
-          Write-Host "📦 RUNTIME_CACHE actual: $currentRuntimeCache" -ForegroundColor Cyan
+          Write-Host "RUNTIME_CACHE actual: $currentRuntimeCache" -ForegroundColor Cyan
         } else {
-          Write-Host "⚠️ No se pudo extraer RUNTIME_CACHE" -ForegroundColor Yellow
+          Write-Host "No se pudo extraer RUNTIME_CACHE" -ForegroundColor Yellow
           $currentRuntimeCache = $null
         }
         
         Write-Host ""
         
-        # Intentar obtener la versión anterior (del commit anterior)
+        # Intentar obtener la version anterior
         try {
-          $previousContent = git show HEAD~1:$swPath 2>$null
+          $gitOutput = git show HEAD~1:$swPath 2>&1
           
-          if ($LASTEXITCODE -eq 0 -and $previousContent) {
+          if ($LASTEXITCODE -eq 0 -and $gitOutput) {
+            $previousContent = $gitOutput -join "`n"
+            
             # Extraer versiones del commit anterior
             $previousCacheName = $null
             $previousRuntimeCache = $null
             
-            if ($previousContent -match "const CACHE_NAME = '([^']+)'") {
+            if ($previousContent -match $cachePattern) {
               $previousCacheName = $matches[1]
-              Write-Host "📦 CACHE_NAME anterior: $previousCacheName" -ForegroundColor Gray
+              Write-Host "CACHE_NAME anterior: $previousCacheName" -ForegroundColor Gray
             }
             
-            if ($previousContent -match "const RUNTIME_CACHE = '([^']+)'") {
+            if ($previousContent -match $runtimePattern) {
               $previousRuntimeCache = $matches[1]
-              Write-Host "📦 RUNTIME_CACHE anterior: $previousRuntimeCache" -ForegroundColor Gray
+              Write-Host "RUNTIME_CACHE anterior: $previousRuntimeCache" -ForegroundColor Gray
             }
             
             Write-Host ""
@@ -84,62 +91,62 @@ jobs:
             $runtimeChanged = $currentRuntimeCache -ne $previousRuntimeCache
             
             if ($cacheChanged -or $runtimeChanged) {
-              Write-Host "✅ VERSIÓN ACTUALIZADA CORRECTAMENTE" -ForegroundColor Green
+              Write-Host "VERSION ACTUALIZADA CORRECTAMENTE" -ForegroundColor Green
               Write-Host ""
               
               if ($cacheChanged) {
-                Write-Host "   ✓ CACHE_NAME cambió: $previousCacheName → $currentCacheName" -ForegroundColor Green
+                Write-Host "   CACHE_NAME cambio: $previousCacheName -> $currentCacheName" -ForegroundColor Green
               }
               if ($runtimeChanged) {
-                Write-Host "   ✓ RUNTIME_CACHE cambió: $previousRuntimeCache → $currentRuntimeCache" -ForegroundColor Green
+                Write-Host "   RUNTIME_CACHE cambio: $previousRuntimeCache -> $currentRuntimeCache" -ForegroundColor Green
               }
               
               Write-Host ""
-              Write-Host "🎉 El Service Worker será actualizado en los clientes" -ForegroundColor Green
+              Write-Host "El Service Worker sera actualizado en los clientes" -ForegroundColor Green
             } else {
-              Write-Host "⚠️ ADVERTENCIA: Las versiones del Service Worker NO han cambiado" -ForegroundColor Yellow
+              Write-Host "ADVERTENCIA: Las versiones del Service Worker NO han cambiado" -ForegroundColor Yellow
               Write-Host ""
-              Write-Host "Si has modificado archivos estáticos (CSS, JS, imágenes)," -ForegroundColor Yellow
-              Write-Host "debes actualizar la versión en service-worker.js:" -ForegroundColor Yellow
+              Write-Host "Si has modificado archivos estaticos (CSS, JS, imagenes)," -ForegroundColor Yellow
+              Write-Host "debes actualizar la version en service-worker.js:" -ForegroundColor Yellow
               Write-Host ""
-              Write-Host "  const CACHE_NAME = 'presupuesto-app-v3';         // Incrementar versión" -ForegroundColor Cyan
-              Write-Host "  const RUNTIME_CACHE = 'presupuesto-runtime-v3';  // Incrementar versión" -ForegroundColor Cyan
+              Write-Host "  const CACHE_NAME = 'presupuesto-app-v4';" -ForegroundColor Cyan
+              Write-Host "  const RUNTIME_CACHE = 'presupuesto-runtime-v4';" -ForegroundColor Cyan
               Write-Host ""
-              Write-Host "Esto asegura que los usuarios reciban las últimas actualizaciones." -ForegroundColor Yellow
+              Write-Host "Esto asegura que los usuarios reciban las ultimas actualizaciones." -ForegroundColor Yellow
               Write-Host ""
-              Write-Host "⏩ Continuando con el deployment..." -ForegroundColor Yellow
+              Write-Host "Continuando con el deployment..." -ForegroundColor Yellow
             }
           } else {
-            Write-Host "ℹ️ No se puede comparar con versión anterior (primer commit o archivo nuevo)" -ForegroundColor Cyan
-            Write-Host "✓ Versión actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
+            Write-Host "No se puede comparar con version anterior (primer commit o archivo nuevo)" -ForegroundColor Cyan
+            Write-Host "Version actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
           }
         } catch {
-          Write-Host "ℹ️ No se pudo obtener la versión anterior del Service Worker" -ForegroundColor Cyan
-          Write-Host "✓ Versión actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
+          Write-Host "No se pudo obtener la version anterior del Service Worker" -ForegroundColor Cyan
+          Write-Host "Version actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
         }
         
         Write-Host ""
         Write-Host "============================================" -ForegroundColor Cyan
         Write-Host ""
       
-    - name: 📦 Restore dependencies
+    - name: Restore dependencies
       run: dotnet restore
       working-directory: .
       
-    - name: 🏗️ Build
+    - name: Build
       run: dotnet build --configuration Release --no-restore
       working-directory: .
       
-    - name: 🧪 Run tests
+    - name: Run tests
       run: dotnet test --no-build --verbosity normal --configuration Release
       working-directory: .
-      continue-on-error: true  # No fallar si no hay tests configurados
+      continue-on-error: true
       
-    - name: 📤 Publish
+    - name: Publish
       run: dotnet publish --configuration Release --output ${{ env.PUBLISH_PATH }} --no-build
       working-directory: .
       
-    - name: 🛑 Stop IIS App Pool
+    - name: Stop IIS App Pool
       shell: powershell
       run: |
         Import-Module WebAdministration
@@ -152,15 +159,15 @@ jobs:
           if ($state -eq "Started") {
             Stop-WebAppPool -Name "${{ env.IIS_APP_POOL }}"
             Start-Sleep -Seconds 5
-            Write-Host "✓ App Pool stopped successfully"
+            Write-Host "App Pool stopped successfully"
           } else {
-            Write-Host "⚠️ App Pool was already stopped"
+            Write-Host "App Pool was already stopped"
           }
         } else {
-          Write-Host "⚠️ App Pool not found - will be created on first deployment"
+          Write-Host "App Pool not found - will be created on first deployment"
         }
         
-    - name: 📁 Backup Previous Deployment
+    - name: Backup Previous Deployment
       shell: powershell
       run: |
         $destination = "${{ env.IIS_PHYSICAL_PATH }}"
@@ -171,22 +178,22 @@ jobs:
           Write-Host "Creating backup at: $backupPath"
           New-Item -Path "C:\Backups" -ItemType Directory -Force | Out-Null
           Copy-Item -Path $destination -Destination $backupPath -Recurse -Force
-          Write-Host "✓ Backup created successfully"
+          Write-Host "Backup created successfully"
           
-          # Limpiar backups antiguos (más de 7 días)
+          # Limpiar backups antiguos (mas de 7 dias)
           $oldBackups = Get-ChildItem "C:\Backups" | Where-Object {
             $_.Name -like "PresupuestoApp_*" -and $_.CreationTime -lt (Get-Date).AddDays(-7)
           }
           
           if ($oldBackups) {
             $oldBackups | Remove-Item -Recurse -Force
-            Write-Host "✓ Cleaned up $($oldBackups.Count) old backup(s)"
+            Write-Host "Cleaned up $($oldBackups.Count) old backup(s)"
           }
         } else {
-          Write-Host "⚠️ No previous deployment found, skipping backup"
+          Write-Host "No previous deployment found, skipping backup"
         }
         
-    - name: 🚀 Deploy to IIS
+    - name: Deploy to IIS
       shell: powershell
       run: |
         $source = "${{ env.PUBLISH_PATH }}\*"
@@ -201,9 +208,9 @@ jobs:
         # Copiar archivos nuevos
         Write-Host "Copying files..."
         Copy-Item -Path $source -Destination $destination -Recurse -Force
-        Write-Host "✓ Files deployed successfully"
+        Write-Host "Files deployed successfully"
         
-        # Verificar que los archivos críticos existen
+        # Verificar que los archivos criticos existen
         $criticalFiles = @(
           "PresupuestoFamiliarApp.dll",
           "web.config",
@@ -214,13 +221,13 @@ jobs:
         foreach ($file in $criticalFiles) {
           $filePath = Join-Path $destination $file
           if (Test-Path $filePath) {
-            Write-Host "✓ $file exists"
+            Write-Host "$file exists"
           } else {
-            Write-Host "❌ WARNING: $file not found!"
+            Write-Host "WARNING: $file not found!"
           }
         }
         
-    - name: 🔐 Set Permissions
+    - name: Set Permissions
       shell: powershell
       run: |
         $path = "${{ env.IIS_PHYSICAL_PATH }}"
@@ -229,22 +236,22 @@ jobs:
         
         # Dar permisos al Application Pool Identity
         icacls $path /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)RX" /T | Out-Null
-        Write-Host "✓ Read/Execute permissions set for App Pool"
+        Write-Host "Read/Execute permissions set for App Pool"
         
-        # Dar permisos de escritura a wwwroot (para archivos estáticos, uploads)
+        # Dar permisos de escritura a wwwroot
         $wwwrootPath = Join-Path $path "wwwroot"
         if (Test-Path $wwwrootPath) {
           icacls $wwwrootPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
-          Write-Host "✓ Write permissions set for wwwroot"
+          Write-Host "Write permissions set for wwwroot"
         }
         
         # Crear y dar permisos a carpeta de logs
         $logsPath = Join-Path $path "logs"
         New-Item -Path $logsPath -ItemType Directory -Force | Out-Null
         icacls $logsPath /grant "IIS AppPool\${{ env.IIS_APP_POOL }}:(OI)(CI)M" /T | Out-Null
-        Write-Host "✓ Logs directory created and permissions set"
+        Write-Host "Logs directory created and permissions set"
         
-    - name: 🔄 Start IIS App Pool
+    - name: Start IIS App Pool
       shell: powershell
       run: |
         Import-Module WebAdministration
@@ -258,15 +265,15 @@ jobs:
           Write-Host "App Pool state: $state"
           
           if ($state -eq "Started") {
-            Write-Host "✓ App Pool started successfully"
+            Write-Host "App Pool started successfully"
           } else {
-            Write-Host "⚠️ App Pool state is: $state"
+            Write-Host "App Pool state is: $state"
           }
         } else {
-          Write-Host "⚠️ App Pool not found - please configure IIS manually"
+          Write-Host "App Pool not found - please configure IIS manually"
         }
         
-    - name: ✅ Verify Deployment
+    - name: Verify Deployment
       shell: powershell
       run: |
         Import-Module WebAdministration
@@ -277,7 +284,7 @@ jobs:
           Write-Host "App Pool State: $poolState"
           
           if ($poolState -ne "Started") {
-            throw "❌ App Pool failed to start properly!"
+            throw "App Pool failed to start properly!"
           }
         }
         
@@ -287,25 +294,25 @@ jobs:
           Write-Host "Website State: $siteState"
         }
         
-        # Intentar hacer una petición HTTP
+        # Intentar hacer una peticion HTTP
         Write-Host ""
         Write-Host "Testing HTTP response..."
         try {
           $response = Invoke-WebRequest -Uri "http://presupuesto.gestionaminegocio.com" -UseBasicParsing -TimeoutSec 15 -ErrorAction Stop
           
           if ($response.StatusCode -eq 200) {
-            Write-Host "✓ Application is responding (HTTP 200 OK)"
+            Write-Host "Application is responding (HTTP 200 OK)"
           } else {
-            Write-Host "⚠️ Application returned status: $($response.StatusCode)"
+            Write-Host "Application returned status: $($response.StatusCode)"
           }
         } catch {
-          Write-Host "⚠️ Could not reach application: $($_.Exception.Message)"
-          Write-Host "   The application may still be starting up..."
-          Write-Host "   Or DNS may not be configured yet for presupuesto.gestionaminegocio.com"
+          Write-Host "Could not reach application: $($_.Exception.Message)"
+          Write-Host "The application may still be starting up..."
+          Write-Host "Or DNS may not be configured yet for presupuesto.gestionaminegocio.com"
         }
         
         Write-Host ""
-        Write-Host "🎉 Deployment completed successfully!"
+        Write-Host "Deployment completed successfully!"
         Write-Host "================================================"
         Write-Host "Deployed to: ${{ env.IIS_PHYSICAL_PATH }}"
         Write-Host "App Pool: ${{ env.IIS_APP_POOL }}"
@@ -313,7 +320,7 @@ jobs:
         Write-Host "URL: http://presupuesto.gestionaminegocio.com"
         Write-Host "================================================"
         
-    - name: 📊 Deployment Summary
+    - name: Deployment Summary
       if: always()
       shell: powershell
       run: |
