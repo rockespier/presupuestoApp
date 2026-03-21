@@ -19,97 +19,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 2
-      
-    - name: Verify Service Worker Version Update
-      shell: powershell
-      run: |
-        Write-Host "============================================" -ForegroundColor Cyan
-        Write-Host "   VERIFICACION DE VERSION SERVICE WORKER" -ForegroundColor Cyan
-        Write-Host "============================================" -ForegroundColor Cyan
-        Write-Host ""
-        
-        $swPath = "wwwroot\service-worker.js"
-        
-        if (!(Test-Path $swPath)) {
-          Write-Host "ERROR: No se encontro $swPath" -ForegroundColor Red
-          exit 1
-        }
-        
-        $currentContent = Get-Content $swPath -Raw
-        $cachePattern = "const CACHE_NAME = '([^']+)'"
-        $runtimePattern = "const RUNTIME_CACHE = '([^']+)'"
-        
-        if ($currentContent -match $cachePattern) {
-          $currentCacheName = $matches[1]
-          Write-Host "CACHE_NAME actual: $currentCacheName" -ForegroundColor Cyan
-        } else {
-          Write-Host "No se pudo extraer CACHE_NAME" -ForegroundColor Yellow
-          $currentCacheName = $null
-        }
-        
-        if ($currentContent -match $runtimePattern) {
-          $currentRuntimeCache = $matches[1]
-          Write-Host "RUNTIME_CACHE actual: $currentRuntimeCache" -ForegroundColor Cyan
-        } else {
-          Write-Host "No se pudo extraer RUNTIME_CACHE" -ForegroundColor Yellow
-          $currentRuntimeCache = $null
-        }
-        
-        Write-Host ""
-        
-        # Intentar obtener version anterior - version simplificada
-        $previousCacheName = $null
-        $previousRuntimeCache = $null
-        
-        try {
-          $ErrorActionPreference = 'SilentlyContinue'
-          $previousContent = git show "HEAD~1:$swPath" 2>$null
-          
-          if ($previousContent) {
-            $previousContentStr = $previousContent -join "`n"
-            
-            if ($previousContentStr -match $cachePattern) {
-              $previousCacheName = $matches[1]
-              Write-Host "CACHE_NAME anterior: $previousCacheName" -ForegroundColor Gray
-            }
-            
-            if ($previousContentStr -match $runtimePattern) {
-              $previousRuntimeCache = $matches[1]
-              Write-Host "RUNTIME_CACHE anterior: $previousRuntimeCache" -ForegroundColor Gray
-            }
-            
-            Write-Host ""
-            
-            $cacheChanged = $currentCacheName -ne $previousCacheName
-            $runtimeChanged = $currentRuntimeCache -ne $previousRuntimeCache
-            
-            if ($cacheChanged -or $runtimeChanged) {
-              Write-Host "VERSION ACTUALIZADA CORRECTAMENTE" -ForegroundColor Green
-              if ($cacheChanged) {
-                Write-Host "   CACHE_NAME: $previousCacheName -> $currentCacheName" -ForegroundColor Green
-              }
-              if ($runtimeChanged) {
-                Write-Host "   RUNTIME_CACHE: $previousRuntimeCache -> $currentRuntimeCache" -ForegroundColor Green
-              }
-            } else {
-              Write-Host "ADVERTENCIA: Las versiones NO han cambiado" -ForegroundColor Yellow
-              Write-Host "Si modificaste CSS/JS, actualiza la version en service-worker.js" -ForegroundColor Yellow
-            }
-          } else {
-            Write-Host "Primer commit o archivo nuevo" -ForegroundColor Cyan
-            Write-Host "Version actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
-          }
-        } catch {
-          Write-Host "No se pudo comparar con version anterior" -ForegroundColor Cyan
-          Write-Host "Version actual: $currentCacheName / $currentRuntimeCache" -ForegroundColor Cyan
-        }
-        
-        $ErrorActionPreference = 'Continue'
-        Write-Host ""
-        Write-Host "============================================" -ForegroundColor Cyan
-        Write-Host ""
       
     - name: Restore dependencies
       run: dotnet restore
@@ -192,8 +101,7 @@ jobs:
         $criticalFiles = @(
           "PresupuestoFamiliarApp.dll",
           "web.config",
-          "appsettings.json",
-          "wwwroot\service-worker.js"
+          "appsettings.json"
         )
         
         foreach ($file in $criticalFiles) {

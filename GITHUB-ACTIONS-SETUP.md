@@ -181,72 +181,6 @@ Si tu branch principal se llama `master` en lugar de `main`, ajusta la configura
 
 ---
 
-## ? **NUEVA FUNCIONALIDAD: Validación de Service Worker**
-
-### **?? Verificación Automática de Versiones**
-
-El workflow ahora **valida automáticamente** si actualizaste la versión del Service Worker cuando haces cambios en archivos estáticos.
-
-**¿Por qué es importante?**
-- ? Los usuarios reciben las últimas actualizaciones de CSS/JS
-- ? La PWA funciona correctamente con los nuevos cambios
-- ? Evita bugs causados por archivos cacheados antiguos
-
-### **Ejemplo de Validación:**
-
-#### **? Si actualizaste la versión:**
-```
-============================================
-   VERIFICACIÓN DE VERSIÓN SERVICE WORKER
-============================================
-
-?? CACHE_NAME actual: presupuesto-app-v3
-?? RUNTIME_CACHE actual: presupuesto-runtime-v3
-
-?? CACHE_NAME anterior: presupuesto-app-v2
-?? RUNTIME_CACHE anterior: presupuesto-runtime-v2
-
-? VERSIÓN ACTUALIZADA CORRECTAMENTE
-
-   ? CACHE_NAME cambió: presupuesto-app-v2 ? presupuesto-app-v3
-   ? RUNTIME_CACHE cambió: presupuesto-runtime-v2 ? presupuesto-runtime-v3
-
-?? El Service Worker será actualizado en los clientes
-
-============================================
-```
-
-#### **?? Si olvidaste actualizar:**
-```
-?? ADVERTENCIA: Las versiones del Service Worker NO han cambiado
-
-Si has modificado archivos estáticos (CSS, JS, imágenes),
-debes actualizar la versión en service-worker.js:
-
-  const CACHE_NAME = 'presupuesto-app-v3';
-  const RUNTIME_CACHE = 'presupuesto-runtime-v3';
-
-? Continuando con el deployment...
-```
-
-### **Cómo Actualizar la Versión:**
-
-```javascript
-// En: wwwroot/service-worker.js
-
-// ANTES
-const CACHE_NAME = 'presupuesto-app-v2';
-const RUNTIME_CACHE = 'presupuesto-runtime-v2';
-
-// DESPUÉS (incrementar número)
-const CACHE_NAME = 'presupuesto-app-v3';
-const RUNTIME_CACHE = 'presupuesto-runtime-v3';
-```
-
-**?? Documentación completa:** Ver `SERVICE-WORKER-VERSIONING.md`
-
----
-
 ## ? **CHECKLIST COMPLETO**
 
 ### **En el Servidor (161.132.56.79)**
@@ -265,18 +199,12 @@ const RUNTIME_CACHE = 'presupuesto-runtime-v3';
 ### **En Tu Máquina Local**
 - [ ] ? Workflow `.github/workflows/deploy-iis.yml` creado
 - [ ] ? Workflow configurado con ruta correcta
-- [ ] ? Workflow con validación de Service Worker ? **NUEVO**
 - [ ] ? Commit realizado
 - [ ] ? Push a GitHub completado
-
-### **Antes de cada Push**
-- [ ] ?? ¿Modifiqué CSS, JS o imágenes?
-- [ ] ?? ¿Actualicé la versión del Service Worker? ? **IMPORTANTE**
 
 ### **En GitHub**
 - [ ] ? Workflow visible en la pestaña Actions
 - [ ] ? Workflow se ejecuta correctamente
-- [ ] ? Validación de Service Worker pasa ? **NUEVO**
 - [ ] ? Todos los pasos completan exitosamente
 
 ### **Verificación Final**
@@ -285,7 +213,6 @@ const RUNTIME_CACHE = 'presupuesto-runtime-v3';
 - [ ] ? Login funciona correctamente
 - [ ] ? No hay errores en los logs
 - [ ] ? PWA instala correctamente
-- [ ] ? Service Worker actualizado en clientes ? **NUEVO**
 
 ---
 
@@ -295,7 +222,6 @@ Ahora tienes configurado **CI/CD completo** con:
 
 ? **Compilación automática** cada vez que haces push
 ? **Tests automáticos** antes del deployment
-? **Validación de versión del Service Worker** ? **NUEVO**
 ? **Deployment automático** a IIS
 ? **Publicación directa en la carpeta del dominio**
 ? **Backups automáticos** antes de cada deploy
@@ -304,7 +230,48 @@ Ahora tienes configurado **CI/CD completo** con:
 
 ---
 
-## ?? **RUTAS Y ARCHIVOS IMPORTANTES**
+## ?? **RESUMEN RÁPIDO**
+
+| ¿Dónde? | ¿Qué hago? |
+|---------|-----------|
+| ??? **SERVIDOR** | Instalar runner, IIS, .NET (Pasos 1-5) - **UNA SOLA VEZ** |
+| ?? **LOCAL** | El workflow ya está creado y configurado - **YA HECHO** ? |
+| ?? **LOCAL** | Desarrollar código normalmente |
+| ?? **LOCAL** | `git push` cuando termines |
+| ?? **GITHUB** | Automáticamente despliega a tu servidor |
+| ?? **WEB** | Accede a `http://presupuesto.gestionaminegocio.com` |
+
+**?? ¡Todo automatizado! Solo haz `git push` y GitHub Actions despliega directamente en tu dominio.**
+
+---
+
+## ?? **FLUJO DE TRABAJO COMPLETO**
+
+```bash
+# 1. Hacer cambios en código
+code Pages/Dashboard.cshtml
+code wwwroot/css/site.css
+
+# 2. Probar localmente
+dotnet run
+
+# 3. Commit
+git add .
+git commit -m "feat: Mejoras en el dashboard"
+
+# 4. Push
+git push origin main
+
+# 5. GitHub Actions automáticamente:
+#    ? Compila el proyecto
+#    ? Ejecuta tests
+#    ? Despliega a IIS
+#    ? Los usuarios ven los cambios
+```
+
+---
+
+## ?? **RUTAS IMPORTANTES**
 
 | Concepto | Ubicación |
 |----------|-----------|
@@ -313,7 +280,6 @@ Ahora tienes configurado **CI/CD completo** con:
 | **Backups** | `C:\Backups\PresupuestoApp_*` |
 | **Logs IIS** | `C:\inetpub\logs\LogFiles\` |
 | **Logs App** | `C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com\logs\` |
-| **Service Worker** | `wwwroot\service-worker.js` ? |
 | **Workflow** | `.github\workflows\deploy-iis.yml` |
 
 ---
@@ -323,42 +289,33 @@ Ahora tienes configurado **CI/CD completo** con:
 | Documento | Descripción |
 |-----------|-------------|
 | `GITHUB-ACTIONS-SETUP.md` | Este documento - Guía completa |
-| `SERVICE-WORKER-VERSIONING.md` | ? Guía de versiones del Service Worker |
+| `SERVICE-WORKER-VERSIONING.md` | Guía de versiones del Service Worker (manual) |
 | `DEPLOYMENT-IIS-GUIDE.md` | Guía de deployment manual a IIS |
 | `setup-iis-site.ps1` | Script de configuración automática de IIS |
 | `verify-runner.ps1` | Script de verificación del runner |
 
 ---
 
-## ?? **FLUJO DE TRABAJO COMPLETO**
+## ?? **NOTA IMPORTANTE: Service Worker**
 
-```bash
-# 1. Hacer cambios en código
-code Pages/Dashboard.cshtml
-code wwwroot/css/site.css  # ? Cambios en CSS
+El workflow **NO valida automáticamente** la versión del Service Worker. 
 
-# 2. Actualizar Service Worker (IMPORTANTE si modificaste CSS/JS)
-code wwwroot/service-worker.js
-# Cambiar: v2 ? v3
+**Recuerda actualizar manualmente** la versión cuando modifiques archivos estáticos:
 
-# 3. Probar localmente
-dotnet run
-
-# 4. Commit
-git add .
-git commit -m "feat: Mejoras en el dashboard (SW v3)"
-
-# 5. Push
-git push origin main
-
-# 6. GitHub Actions automáticamente:
-#    ? Valida versión del Service Worker ? NUEVO
-#    ? Compila el proyecto
-#    ? Ejecuta tests
-#    ? Despliega a IIS
-#    ? Usuarios reciben la actualización
+```javascript
+// En: wwwroot/service-worker.js
+const CACHE_NAME = 'presupuesto-app-v6';  // Incrementar número
+const RUNTIME_CACHE = 'presupuesto-runtime-v6';  // Incrementar número
 ```
+
+**¿Cuándo actualizar?**
+- ? Cambios en CSS
+- ? Cambios en JavaScript
+- ? Cambios en imágenes/iconos
+- ? Cambios en HTML/Razor Pages
+
+?? **Guía completa:** Ver `SERVICE-WORKER-VERSIONING.md`
 
 ---
 
-**?? ¡Todo automatizado! Solo haz `git push` y GitHub Actions se encarga del resto, incluyendo validar que el Service Worker esté actualizado.**
+**?? ¡Todo listo! Solo haz `git push` y GitHub Actions se encarga del resto.**
