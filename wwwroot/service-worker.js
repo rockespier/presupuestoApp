@@ -1,8 +1,8 @@
 // Service Worker para PresupuestoFamiliarApp
 // Versión: 1.0.0
 
-const CACHE_NAME = 'presupuesto-app-v7';
-const RUNTIME_CACHE = 'presupuesto-runtime-v7';
+const CACHE_NAME = 'presupuesto-app-v9';
+const RUNTIME_CACHE = 'presupuesto-runtime-v9';
 
 // Archivos esenciales para cachear en la instalación
 const PRECACHE_URLS = [

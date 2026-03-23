@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 env:
+  DOTNET_VERSION: '9.0.x'
   PUBLISH_PATH: './publish'
   IIS_SITE_NAME: 'PresupuestoFamiliarApp'
   IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
@@ -19,75 +20,38 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Find and Setup dotnet
+    - name: Verify dotnet installation
       shell: powershell
       run: |
-        Write-Host "Searching for dotnet installation..." -ForegroundColor Cyan
+        Write-Host "Verifying .NET SDK installation..." -ForegroundColor Cyan
         
-        # Buscar dotnet en ubicaciones comunes
-        $possiblePaths = @(
-          "C:\Program Files\dotnet\dotnet.exe",
-          "C:\Program Files (x86)\dotnet\dotnet.exe",
-          "$env:ProgramFiles\dotnet\dotnet.exe",
-          "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"
-        )
-        
-        $dotnetPath = $null
-        foreach ($path in $possiblePaths) {
-          if (Test-Path $path) {
-            $dotnetPath = $path
-            Write-Host "Found dotnet at: $path" -ForegroundColor Green
-            break
-          }
-        }
-        
-        if (-not $dotnetPath) {
-          # Buscar en PATH
-          $dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
-          if ($dotnetCmd) {
-            $dotnetPath = $dotnetCmd.Source
-            Write-Host "Found dotnet in PATH: $dotnetPath" -ForegroundColor Green
-          }
-        }
-        
-        if (-not $dotnetPath) {
-          Write-Host "ERROR: dotnet not found in any location!" -ForegroundColor Red
-          Write-Host "Please install .NET 9.0 Hosting Bundle on the server" -ForegroundColor Yellow
+        try {
+          dotnet --version
+          Write-Host "SDK version: $(dotnet --version)" -ForegroundColor Green
+          
+          Write-Host "Installed SDKs:" -ForegroundColor Cyan
+          dotnet --list-sdks
+          
+          Write-Host "Installed Runtimes:" -ForegroundColor Cyan
+          dotnet --list-runtimes
+        } catch {
+          Write-Host "ERROR: dotnet SDK not found or not in PATH" -ForegroundColor Red
+          Write-Host "Please ensure .NET SDK 9.0 is installed and in PATH" -ForegroundColor Yellow
           exit 1
         }
-        
-        # Guardar la ruta para los siguientes pasos
-        Write-Host "Setting DOTNET_EXE environment variable" -ForegroundColor Cyan
-        "DOTNET_EXE=$dotnetPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        
-        # Verificar version
-        Write-Host "Dotnet version:" -ForegroundColor Cyan
-        & $dotnetPath --version
-        
-        Write-Host "Runtimes installed:" -ForegroundColor Cyan
-        & $dotnetPath --list-runtimes
       
     - name: Restore dependencies
       shell: powershell
       run: |
         Write-Host "Restoring dependencies..." -ForegroundColor Cyan
-        Write-Host "Using dotnet: $env:DOTNET_EXE" -ForegroundColor Gray
-        & $env:DOTNET_EXE restore
-        if ($LASTEXITCODE -ne 0) {
-          Write-Host "ERROR: Restore failed with exit code $LASTEXITCODE" -ForegroundColor Red
-          exit $LASTEXITCODE
-        }
+        dotnet restore
       working-directory: .
       
     - name: Build
       shell: powershell
       run: |
         Write-Host "Building application..." -ForegroundColor Cyan
-        & $env:DOTNET_EXE build --configuration Release --no-restore
-        if ($LASTEXITCODE -ne 0) {
-          Write-Host "ERROR: Build failed with exit code $LASTEXITCODE" -ForegroundColor Red
-          exit $LASTEXITCODE
-        }
+        dotnet build --configuration Release --no-restore
       working-directory: .
       
     - name: Run tests (if available)
@@ -100,7 +64,7 @@ jobs:
           Write-Host "No test projects found - skipping tests" -ForegroundColor Yellow
         } else {
           Write-Host "Running tests..." -ForegroundColor Cyan
-          & $env:DOTNET_EXE test --no-build --verbosity normal --configuration Release
+          dotnet test --no-build --verbosity normal --configuration Release
         }
       working-directory: .
       continue-on-error: true
@@ -109,11 +73,7 @@ jobs:
       shell: powershell
       run: |
         Write-Host "Publishing application..." -ForegroundColor Cyan
-        & $env:DOTNET_EXE publish --configuration Release --output "${{ env.PUBLISH_PATH }}" --no-build
-        if ($LASTEXITCODE -ne 0) {
-          Write-Host "ERROR: Publish failed with exit code $LASTEXITCODE" -ForegroundColor Red
-          exit $LASTEXITCODE
-        }
+        dotnet publish --configuration Release --output "${{ env.PUBLISH_PATH }}" --no-build
       working-directory: .
       
     - name: Stop IIS App Pool
@@ -184,13 +144,19 @@ jobs:
         )
         
         Write-Host "Verifying critical files..." -ForegroundColor Cyan
+        $allFilesExist = $true
         foreach ($file in $criticalFiles) {
           $filePath = Join-Path $destination $file
           if (Test-Path $filePath) {
             Write-Host "  [OK] $file" -ForegroundColor Green
           } else {
             Write-Host "  [MISSING] $file" -ForegroundColor Red
+            $allFilesExist = $false
           }
+        }
+        
+        if (-not $allFilesExist) {
+          throw "Some critical files are missing!"
         }
         
     - name: Set Permissions
@@ -299,5 +265,4 @@ jobs:
         Write-Host "Deployment Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
         Write-Host "Target Path: ${{ env.IIS_PHYSICAL_PATH }}"
         Write-Host "Public URL: http://presupuesto.gestionaminegocio.com"
-        Write-Host "Dotnet Used: $env:DOTNET_EXE"
         Write-Host "============================================"
