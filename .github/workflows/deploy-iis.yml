@@ -8,8 +8,8 @@ on:
 env:
   DOTNET_VERSION: '9.0.x'
   PUBLISH_PATH: './publish'
-  IIS_SITE_NAME: 'PresupuestoFamiliarApp'
-  IIS_APP_POOL: 'PresupuestoFamiliarAppPool'
+  IIS_SITE_NAME: 'presupuesto.gestionaminegocio.com'
+  IIS_APP_POOL: 'presupuesto.gestionaminegocio.com'
   IIS_PHYSICAL_PATH: 'C:\inetpub\wwwroot\presupuesto.gestionaminegocio.com'
 
 jobs:

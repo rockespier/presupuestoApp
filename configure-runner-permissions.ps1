@@ -185,7 +185,7 @@ if ($serviceAccount -ne "LocalSystem" -and $serviceAccount -ne "NT AUTHORITY\SYS
 Write-Host ""
 Write-Host "6. Configurando permisos del Application Pool..." -ForegroundColor Yellow
 
-$appPoolName = "PresupuestoFamiliarAppPool"
+$appPoolName = "presupuesto.gestionaminegocio.com"
 
 try {
     # Verificar si el App Pool existe
