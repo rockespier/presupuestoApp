@@ -83,6 +83,7 @@
     
     <!-- PWA Installer Script -->
     <script src="~/js/pwa-installer.js" defer></script>
+    <script src="~/js/push-manager.js" defer></script>
     
     <style>
         /* Transiciones suaves para el modo oscuro */
@@ -155,140 +156,150 @@
         var espacioActivo = espaciosPermitidos.FirstOrDefault(e => e.Id == espacioActivoId) ?? espaciosPermitidos.FirstOrDefault();
     }
 
-    <!-- Header/Navbar -->
-    <header class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
-        <nav class="container mx-auto px-4 lg:px-6">
-            <div class="flex items-center justify-between h-16">
-                <!-- Logo y Espacio Selector -->
-                <div class="flex items-center gap-4">
-                    <!-- Mobile Menu Button -->
-                    <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    
-                    @if (espaciosPermitidos.Any())
-                    {
-                        <div class="relative" x-data="{ open: false }">
-                            <button onclick="toggleDropdown('espacioDropdown')" 
-                                    class="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary-500 to-blue-600 text-white font-semibold hover:from-primary-600 hover:to-blue-700 shadow-md hover:shadow-lg transition-all">
-                                <span class="hidden sm:inline">@(espacioActivo?.Nombre ?? "Seleccionar Espacio")</span>
-                                <span class="sm:hidden">@((espacioActivo?.Nombre ?? "Espacio").Substring(0, Math.Min(10, (espacioActivo?.Nombre ?? "Espacio").Length)))</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="espacioDropdown" class="hidden absolute top-full mt-2 left-0 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
-                                @foreach (var espacio in espaciosPermitidos)
-                                {
-                                    <form asp-controller="Home" asp-action="CambiarEspacio" method="post" class="m-0">
-                                        <input type="hidden" name="id" value="@espacio.Id" />
-                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                                        <button type="submit" class="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 @(espacio.Id == espacioActivoId ? "bg-primary-50 dark:bg-primary-900/20 font-semibold text-primary-600 dark:text-primary-400" : "")">
-                                            @espacio.Nombre
-                                        </button>
-                                    </form>
-                                }
+    <!-- Header/Navbar - Estructura de dos filas -->
+    <header class="sticky top-0 z-50 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-sm">
+        <!-- Top Header: Selector de Espacios + Botones de Acción -->
+        <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+            <div class="container mx-auto px-4 lg:px-6">
+                <div class="flex items-center justify-between h-14">
+                    <!-- Izquierda: Mobile Menu + Selector de Espacios -->
+                    <div class="flex items-center gap-3">
+                        <!-- Mobile Menu Button -->
+                        <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                        
+                        @if (espaciosPermitidos.Any())
+                        {
+                            <div class="relative" x-data="{ open: false }">
+                                <button onclick="toggleDropdown('espacioDropdown')" 
+                                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-blue-600 text-white text-sm font-semibold hover:from-primary-600 hover:to-blue-700 shadow-sm hover:shadow transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                    </svg>
+                                    <span class="hidden sm:inline">@(espacioActivo?.Nombre ?? "Seleccionar Espacio")</span>
+                                    <span class="sm:hidden">@((espacioActivo?.Nombre ?? "Espacio").Substring(0, Math.Min(10, (espacioActivo?.Nombre ?? "Espacio").Length)))</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div id="espacioDropdown" class="hidden absolute top-full mt-2 left-0 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+                                    @foreach (var espacio in espaciosPermitidos)
+                                    {
+                                        <form asp-controller="Home" asp-action="CambiarEspacio" method="post" class="m-0">
+                                            <input type="hidden" name="id" value="@espacio.Id" />
+                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                            <button type="submit" class="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 @(espacio.Id == espacioActivoId ? "bg-primary-50 dark:bg-primary-900/20 font-semibold text-primary-600 dark:text-primary-400" : "")">
+                                                @espacio.Nombre
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
                             </div>
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
 
-                <!-- Desktop Navigation -->
-                <div class="hidden lg:flex items-center gap-1">
+                    <!-- Derecha: Botones de Acción -->
+                    <div class="flex items-center gap-2">
+                        <!-- Transferir Button -->
+                        <a asp-controller="Transferencias" asp-action="Create" id="menu-transferir" 
+                           class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-sm font-medium transition">
+                            <i class="fa fa-exchange text-sm" aria-hidden="true"></i>
+                            <span class="hidden md:inline">Transferir</span>
+                        </a>
+                        
+                        <!-- Nuevo Movimiento Button -->
+                        <a asp-controller="Transacciones" asp-action="Create" 
+                           class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 text-sm font-medium shadow-sm hover:shadow transition">
+                            <span class="text-base font-bold leading-none">+</span>
+                            <span class="hidden md:inline">Nuevo</span>
+                        </a>
+
+                        <!-- Dark Mode Toggle -->
+                        <button id="darkModeToggle" type="button" 
+                                class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                            <span id="themeIcon" class="text-lg leading-none">🌙</span>
+                        </button>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <div class="relative">
+                                <button onclick="toggleDropdown('perfilDropdown')" 
+                                        class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium transition">
+                                    <div class="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xs">
+                                        @(User.Identity.Name?.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <span class="hidden xl:inline text-sm">@User.Identity.Name</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </button>
+                                <div id="perfilDropdown" class="hidden absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+                                    @if (User.IsInRole("Administrador"))
+                                    {
+                                        <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                                            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Configuración</p>
+                                        </div>
+                                        <a asp-controller="Espacios" asp-action="Index" 
+                                           class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                            <i class="fa fa-home w-5" aria-hidden="true"></i> Espacios
+                                        </a>
+                                        <a asp-controller="Usuarios" asp-action="Index" 
+                                           class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                            <i class="fa fa-users w-5" aria-hidden="true"></i> Usuarios
+                                        </a>
+                                        <a asp-controller="TiposCambio" asp-action="Index" 
+                                           class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                            <i class="fa fa-money w-5" aria-hidden="true"></i> Tipos de Cambio
+                                        </a>
+                                        <div class="border-t border-slate-200 dark:border-slate-700"></div>
+                                    }
+                                    <a asp-controller="Configuracion" asp-action="Index" 
+                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                                        <i class="fa fa-cog w-5" aria-hidden="true"></i> Configuración
+                                    </a>
+                                    <a asp-controller="Auth" asp-action="Logout" 
+                                       class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold">
+                                        <i class="fa fa-sign-out w-5" aria-hidden="true"></i> Cerrar Sesión
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Header: Navegación Principal Centrada -->
+        <nav class="bg-white dark:bg-slate-900">
+            <div class="container mx-auto px-4 lg:px-6">
+                <div class="hidden lg:flex items-center justify-center h-12 gap-1">
                     <a asp-controller="Home" asp-action="Index" id="menu-dashboard" 
-                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
-                        Dashboard
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition text-sm">
+                        <i class="fa fa-dashboard mr-1.5"></i>Dashboard
                     </a>
                     <a asp-controller="Cuentas" asp-action="Index" id="menu-cuentas" 
-                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
-                        Cuentas
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition text-sm">
+                        <i class="fa fa-bank mr-1.5"></i>Cuentas
                     </a>
                     <a asp-controller="Transacciones" asp-action="Index" id="menu-transacciones" 
-                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
-                        Historial
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition text-sm">
+                        <i class="fa fa-history mr-1.5"></i>Historial
                     </a>
                     <a asp-controller="Categorias" asp-action="Index" id="menu-presupuestos" 
-                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
-                        Presupuestos
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition text-sm">
+                        <i class="fa fa-list mr-1.5"></i>Presupuestos
                     </a>
                     <a asp-controller="MovimientosFijos" asp-action="Index" id="menu-suscripciones" 
-                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
-                        Suscripciones
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition text-sm">
+                        <i class="fa fa-repeat mr-1.5"></i>Suscripciones
                     </a>
                     <a asp-controller="CuentasPorCobrar" asp-action="Index" id="menu-deudores" 
-                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition">
-                        Deudores
+                       class="px-4 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-medium transition text-sm">
+                        <i class="fa fa-users mr-1.5"></i>Deudores
                     </a>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex items-center gap-2">
-                    <!-- Transferir Button -->
-                    <a asp-controller="Transferencias" asp-action="Create" id="menu-transferir" 
-                       class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 font-medium transition">
-                        <i class="fa fa-exchange" aria-hidden="true"></i>
-                        <span class="hidden md:inline">Transferir</span>
-                    </a>
-                    
-                    <!-- Nuevo Movimiento Button -->
-                    <a asp-controller="Transacciones" asp-action="Create" 
-                       class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 font-medium shadow-md hover:shadow-lg transition">
-                        <span class="text-lg font-bold">+</span>
-                        <span class="hidden md:inline">Nuevo</span>
-                    </a>
-
-                    <!-- Dark Mode Toggle -->
-                    <button id="darkModeToggle" type="button" 
-                            class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-                        <span id="themeIcon" class="text-xl">🌙</span>
-                    </button>
-
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <div class="relative">
-                            <button onclick="toggleDropdown('perfilDropdown')" 
-                                    class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium transition">
-                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                                    @(User.Identity.Name?.Substring(0, 1).ToUpper())
-                                </div>
-                                <span class="hidden xl:inline">@User.Identity.Name</span>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
-                            <div id="perfilDropdown" class="hidden absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
-                                @if (User.IsInRole("Administrador"))
-                                {
-                                    <div class="px-4 py-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
-                                        <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Configuración</p>
-                                    </div>
-                                    <a asp-controller="Espacios" asp-action="Index" 
-                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-                                        <i class="fa fa-home w-5" aria-hidden="true"></i> Espacios
-                                    </a>
-                                    <a asp-controller="Usuarios" asp-action="Index" 
-                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-                                        <i class="fa fa-users w-5" aria-hidden="true"></i> Usuarios
-                                    </a>
-                                    <a asp-controller="TiposCambio" asp-action="Index" 
-                                       class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-                                        <i class="fa fa-money w-5" aria-hidden="true"></i> Tipos de Cambio
-                                    </a>
-                                    <div class="border-t border-slate-200 dark:border-slate-700"></div>
-                                }
-                                <a asp-controller="Configuracion" asp-action="Index" 
-                                   class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-                                    <i class="fa fa-cog w-5" aria-hidden="true"></i> Configuración
-                                </a>
-                                <a asp-controller="Auth" asp-action="Logout" 
-                                   class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-semibold">
-                                    <i class="fa fa-sign-out w-5" aria-hidden="true"></i> Cerrar Sesión
-                                </a>
-                            </div>
-                        </div>
-                    }
                 </div>
             </div>
         </nav>

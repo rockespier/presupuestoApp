@@ -146,6 +146,96 @@
                 </div>
             </div>
 
+            <!-- Push Notifications Card -->
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="font-bold text-slate-800 dark:text-white text-lg flex items-center gap-2">
+                        <i class="fa fa-bell text-purple-500"></i>
+                        Notificaciones Push
+                    </h3>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- Estado actual -->
+                    <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                                <i class="fa fa-bell text-purple-600 dark:text-purple-400 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-slate-800 dark:text-white">Estado de Notificaciones</p>
+                                <p id="estado-push" class="text-sm text-gray-600 dark:text-gray-400">Verificando...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de control -->
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="button" 
+                                id="btn-suscribir-push"
+                                onclick="suscribirPush()"
+                                class="flex-1 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-700 shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa fa-bell-o"></i>
+                            Activar Notificaciones
+                        </button>
+                        
+                        <button type="button" 
+                                id="btn-desuscribir-push"
+                                onclick="desuscribirPush()"
+                                style="display: none;"
+                                class="flex-1 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600 transition flex items-center justify-center gap-2">
+                            <i class="fa fa-bell-slash-o"></i>
+                            Desactivar Notificaciones
+                        </button>
+                        
+                        <button type="button" 
+                                id="btn-prueba-push"
+                                onclick="probarNotificacion()"
+                                style="display: none;"
+                                class="flex-1 sm:flex-initial px-6 py-3 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold rounded-xl hover:bg-blue-200 dark:hover:bg-blue-900/50 transition flex items-center justify-center gap-2">
+                            <i class="fa fa-send"></i>
+                            Probar
+                        </button>
+                    </div>
+
+                    <!-- Información sobre notificaciones -->
+                    <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                        <h4 class="font-semibold text-purple-900 dark:text-purple-300 mb-3 flex items-center gap-2">
+                            <i class="fa fa-info-circle"></i>
+                            Recibirás notificaciones sobre:
+                        </h4>
+                        <ul class="space-y-2 text-sm text-purple-800 dark:text-purple-200">
+                            <li class="flex items-start gap-2">
+                                <i class="fa fa-check-circle text-purple-600 dark:text-purple-400 mt-0.5"></i>
+                                <span><strong>Vencimientos próximos:</strong> Cuentas por cobrar que están por vencer (3 días antes)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa fa-check-circle text-purple-600 dark:text-purple-400 mt-0.5"></i>
+                                <span><strong>Presupuestos excedidos:</strong> Cuando gastes más del 90% de un presupuesto</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i class="fa fa-check-circle text-purple-600 dark:text-purple-400 mt-0.5"></i>
+                                <span><strong>Movimientos automáticos:</strong> Cuando se registre un movimiento fijo</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Nota de compatibilidad -->
+                    <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <i class="fa fa-exclamation-triangle text-amber-600 dark:text-amber-400 mt-0.5"></i>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-amber-900 dark:text-amber-300 mb-1">Nota de Compatibilidad</p>
+                                <p class="text-xs text-amber-800 dark:text-amber-200">
+                                    Las notificaciones push funcionan mejor en Chrome, Edge y Firefox en Android. 
+                                    En iOS Safari, las notificaciones tienen limitaciones.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Info Card -->
             <div class="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-lg p-6">
                 <div class="flex items-start gap-4">
@@ -164,3 +254,7 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/push-manager.js"></script>
+}

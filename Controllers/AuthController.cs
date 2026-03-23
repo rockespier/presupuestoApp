@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
-using PresupuestoFamiliarApp.Servicios;
 using System.Security.Claims;
 
 namespace PresupuestoFamiliarApp.Controllers
@@ -49,6 +48,7 @@ namespace PresupuestoFamiliarApp.Controllers
 
                 var claims = new List<Claim>
                 {
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()), // ⭐ AGREGADO: ID del usuario
                     new Claim(ClaimTypes.Name, usuario.NombreUsuario),
                     new Claim(ClaimTypes.Email, usuario.Email),
                     new Claim(ClaimTypes.Role, usuario.Rol),

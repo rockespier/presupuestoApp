@@ -331,6 +331,52 @@ namespace PresupuestoFamiliarApp.Migrations
                     b.ToTable("MovimientosFijos");
                 });
 
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.PushSubscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Auth")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DiasAnticipacion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("NotificarMovimientos")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotificarPresupuestos")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotificarVencimientos")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("P256dh")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("PushSubscriptions");
+                });
+
             modelBuilder.Entity("PresupuestoFamiliarApp.Models.TipoCambio", b =>
                 {
                     b.Property<int>("Id")
@@ -451,7 +497,7 @@ namespace PresupuestoFamiliarApp.Migrations
                             Email = "rtres.info@gmail.com",
                             MonedaPreferida = 0,
                             NombreUsuario = "admin",
-                            PasswordHash = "$2a$11$lGmNXDsL0GHkEtaFW1YEBuOb3V8o2rdyK2jB8Wi3FuW6iZSB2g8Em",
+                            PasswordHash = "$2a$11$XwxsH2ZUzQVopQcGJrCik.WG3ixYVAauF8NYFCcXNPn9S58pQPp/q",
                             Rol = "Administrador",
                             TourCompletado = false
                         });
@@ -531,6 +577,17 @@ namespace PresupuestoFamiliarApp.Migrations
                     b.Navigation("Categoria");
 
                     b.Navigation("Cuenta");
+                });
+
+            modelBuilder.Entity("PresupuestoFamiliarApp.Models.PushSubscription", b =>
+                {
+                    b.HasOne("PresupuestoFamiliarApp.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("PresupuestoFamiliarApp.Models.Transaccion", b =>

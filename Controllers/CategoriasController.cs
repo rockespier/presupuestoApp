@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace PresupuestoFamiliarApp.Controllers
 {

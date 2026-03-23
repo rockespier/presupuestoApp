@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Net;
+﻿using System.Net;
 using System.Net.Mail;
 using System.Net.Mime; // NUEVO: Necesario para las imágenes adjuntas
 

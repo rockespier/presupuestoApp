@@ -1,22 +1,17 @@
 // Service Worker para PresupuestoFamiliarApp
-// Versión: 1.0.0
+// Versión: 1.0.1
 
-const CACHE_NAME = 'presupuesto-app-v12';
-const RUNTIME_CACHE = 'presupuesto-runtime-v12';
+const CACHE_NAME = 'presupuesto-app-v13';
+const RUNTIME_CACHE = 'presupuesto-runtime-v13';
 
 // Archivos esenciales para cachear en la instalación
 const PRECACHE_URLS = [
     '/',
     '/Home/Index',
     '/Auth/Login',
-    '/css/site.css',
-    '/js/site.js',
-    '/font-awesome/css/font-awesome.css',
-    '/font-awesome/css/font-awesome.min.css',
     '/manifest.json',
     '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png',
-    'https://cdn.tailwindcss.com'
+    '/icons/icon-512x512.png'
 ];
 
 // Instalación del Service Worker
@@ -27,9 +22,22 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('[Service Worker] Pre-caching archivos');
-                return cache.addAll(PRECACHE_URLS);
+                // Intentar cachear cada archivo individualmente para evitar que un error detenga todo
+                return Promise.allSettled(
+                    PRECACHE_URLS.map(url => 
+                        cache.add(url).catch(err => {
+                            console.warn(`[Service Worker] No se pudo cachear: ${url}`, err);
+                        })
+                    )
+                );
             })
-            .then(() => self.skipWaiting())
+            .then(() => {
+                console.log('[Service Worker] Pre-cache completado');
+                return self.skipWaiting();
+            })
+            .catch(error => {
+                console.error('[Service Worker] Error en instalación:', error);
+            })
     );
 });
 
@@ -79,6 +87,17 @@ self.addEventListener('fetch', event => {
 
 // Estrategia: Cache First (primero busca en caché, luego en red)
 async function cacheFirst(request) {
+    // No intentar cachear recursos de dominios externos con CORS
+    const url = new URL(request.url);
+    if (url.origin !== location.origin && !url.origin.includes('localhost')) {
+        try {
+            return await fetch(request);
+        } catch (error) {
+            console.warn('[Service Worker] Error al cargar recurso externo:', url.href);
+            return new Response('', { status: 503, statusText: 'External resource unavailable' });
+        }
+    }
+
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request);
     
@@ -88,14 +107,14 @@ async function cacheFirst(request) {
 
     try {
         const response = await fetch(request);
-        if (response.ok) {
+        if (response.ok && response.status === 200) {
             cache.put(request, response.clone());
         }
         return response;
     } catch (error) {
-        console.error('[Service Worker] Error en cacheFirst:', error);
-        // Retornar página offline si está disponible
-        return cache.match('/offline.html') || new Response('Offline', {
+        console.warn('[Service Worker] Error en cacheFirst:', error);
+        // Retornar respuesta vacía en lugar de fallar
+        return new Response('', { 
             status: 503,
             statusText: 'Service Unavailable'
         });
@@ -137,44 +156,76 @@ async function staleWhileRevalidate(request) {
     return cached || fetchPromise;
 }
 
-// Notificaciones Push (opcional para futuras implementaciones)
+// Notificaciones Push
 self.addEventListener('push', event => {
-    const options = {
-        body: event.data ? event.data.text() : 'Nueva notificación',
+    console.log('[Service Worker] Push recibido');
+    
+    let notificationData = {
+        title: 'Presupuesto Familiar App',
+        body: 'Nueva notificación',
         icon: '/icons/icon-192x192.png',
         badge: '/icons/badge-72x72.png',
         vibrate: [100, 50, 100],
         data: {
-            dateOfArrival: Date.now(),
-            primaryKey: 1
+            url: '/',
+            dateOfArrival: Date.now()
         },
         actions: [
-            {
-                action: 'explore',
-                title: 'Ver más',
-                icon: '/icons/checkmark.png'
-            },
-            {
-                action: 'close',
-                title: 'Cerrar',
-                icon: '/icons/cross.png'
-            }
+            { action: 'view', title: '??? Ver', icon: '/icons/checkmark.png' },
+            { action: 'close', title: '?? Cerrar', icon: '/icons/cross.png' }
         ]
     };
 
+    // Si hay datos en el push, usarlos
+    if (event.data) {
+        try {
+            const payload = event.data.json();
+            if (payload.notification) {
+                notificationData = {
+                    ...notificationData,
+                    ...payload.notification
+                };
+            }
+        } catch (e) {
+            // Si no es JSON, usar el texto directamente
+            notificationData.body = event.data.text();
+        }
+    }
+
     event.waitUntil(
-        self.registration.showNotification('Presupuesto Familiar App', options)
+        self.registration.showNotification(notificationData.title, notificationData)
     );
 });
 
 // Click en notificación
 self.addEventListener('notificationclick', event => {
+    console.log('[Service Worker] Notification click recibido');
+    
     event.notification.close();
 
-    if (event.action === 'explore') {
+    // Obtener la URL de los datos de la notificación
+    const urlToOpen = event.notification.data?.url || '/';
+
+    if (event.action === 'view' || !event.action) {
         event.waitUntil(
-            clients.openWindow('/')
+            clients.matchAll({ type: 'window', includeUncontrolled: true })
+                .then(clientList => {
+                    // Si ya hay una ventana abierta, enfocarla
+                    for (let i = 0; i < clientList.length; i++) {
+                        const client = clientList[i];
+                        if (client.url === urlToOpen && 'focus' in client) {
+                            return client.focus();
+                        }
+                    }
+                    // Si no hay ventana abierta, abrir una nueva
+                    if (clients.openWindow) {
+                        return clients.openWindow(urlToOpen);
+                    }
+                })
         );
+    } else if (event.action === 'close') {
+        // Solo cerrar la notificación (ya se hizo arriba)
+        console.log('[Service Worker] Notificación cerrada');
     }
 });
 

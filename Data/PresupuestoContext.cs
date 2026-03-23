@@ -21,8 +21,10 @@ namespace PresupuestoFamiliarApp.Data
         public DbSet<MovimientoFijo> MovimientosFijos { get; set; }
 
         public DbSet<Usuario> Usuarios { get; set; }
-                        public DbSet<Deudor> Deudores { get; set; }
+        public DbSet<Deudor> Deudores { get; set; }
         public DbSet<CuentaPorCobrar> CuentasPorCobrar { get; set; }
+        public DbSet<PushSubscription> PushSubscriptions { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             // Esto le dice a EF Core que deje de tratar esta advertencia como un error fatal

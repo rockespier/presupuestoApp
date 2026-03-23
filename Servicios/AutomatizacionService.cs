@@ -2,7 +2,6 @@
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
 using ScottPlot; // Librería para el gráfico
-using System.IO;
 
 namespace PresupuestoFamiliarApp.Servicios
 {
