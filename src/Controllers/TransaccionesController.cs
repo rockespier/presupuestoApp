@@ -5,18 +5,19 @@ using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
-
+using PresupuestoFamiliarApp.Servicios;
+using PresupuestoFamiliarApp.Models.DTOs;
 
 namespace PresupuestoFamiliarApp.Controllers
 {
     [Authorize]
     public class TransaccionesController : BaseController
     {
-        //private readonly PresupuestoContext _context;
+        private readonly OcrService _ocrService;
 
-        public TransaccionesController(PresupuestoContext context) : base(context) // CAMBIO: Pasar al constructor base
+        public TransaccionesController(PresupuestoContext context, OcrService ocrService) : base(context)
         {
-            // Ya no es necesario: _context = context;
+            _ocrService = ocrService;
         }
 
         
@@ -240,7 +241,7 @@ namespace PresupuestoFamiliarApp.Controllers
             ViewBag.CuentaSortParm = sortOrder == "cuenta_asc" ? "cuenta_desc" : "cuenta_asc";
             ViewBag.CatSortParm = sortOrder == "cat_asc" ? "cat_desc" : "cat_asc";
             ViewBag.TipoSortParm = sortOrder == "tipo_asc" ? "tipo_desc" : "tipo_asc";
-            // Guardamos el orden actual para que los filtros no lo borren
+            // Guardamos el orden current para que los filtros no lo borren
             ViewBag.CurrentSort = sortOrder;
 
             // Consulta base
@@ -613,6 +614,90 @@ namespace PresupuestoFamiliarApp.Controllers
             await _context.SaveChangesAsync();
             TempData["Exito"] = "¡Excel importado correctamente!";
             return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Recibe contenido compartido desde otras apps (Share Target API)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateFromShare(string? descripcion, string? nota, string? referencia, IFormFile? imagen)
+        {
+            // Si viene una imagen, procesarla con OCR
+            if (imagen != null && imagen.Length > 0)
+            {
+                var resultadoOcr = await _ocrService.ProcesarTicket(imagen);
+                
+                // Redirigir a la vista de creación con los datos extraídos
+                return RedirectToAction(nameof(CreateFromImage), new { 
+                    monto = resultadoOcr.Monto,
+                    fecha = resultadoOcr.Fecha?.ToString("yyyy-MM-dd"),
+                    descripcionOcr = resultadoOcr.Descripcion ?? descripcion,
+                    establecimiento = resultadoOcr.Establecimiento,
+                    rutaImagen = resultadoOcr.RutaImagen,
+                    textoCompleto = resultadoOcr.TextoCompleto,
+                    confianza = resultadoOcr.Confianza,
+                    mensajes = string.Join("|", resultadoOcr.Mensajes)
+                });
+            }
+
+            // Si solo viene texto, redirigir al formulario normal con los datos
+            return RedirectToAction(nameof(Create), new { descripcion, nota });
+        }
+
+        // GET: Vista especial para transacciones desde imágenes compartidas
+        public async Task<IActionResult> CreateFromImage(
+            decimal? monto, 
+            string? fecha, 
+            string? descripcionOcr, 
+            string? establecimiento,
+            string? rutaImagen,
+            string? textoCompleto,
+            float? confianza,
+            string? mensajes)
+        {
+            int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
+
+            var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+            var categoriasDelEspacio = _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToList();
+
+            ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre");
+            ViewBag.CategoriaGastoId = new SelectList(categoriasDelEspacio, "Id", "Nombre");
+
+            var tarjetasIds = cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList();
+            ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(tarjetasIds);
+
+            // Obtener moneda preferida
+            var nombreUsuario = User.Identity?.Name;
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.NombreUsuario == nombreUsuario);
+            var espacioActivo = await _context.Espacios.FindAsync(espacioActualId);
+            var monedaPorDefecto = usuario?.MonedaPreferida ?? espacioActivo?.MonedaPrincipal ?? Moneda.Soles;
+
+            ViewBag.SimboloMoneda = monedaPorDefecto == Moneda.Dolares ? "$" :
+                                   (monedaPorDefecto == Moneda.Euros ? "€" : "S/");
+
+            // Crear transacción con datos del OCR
+            var nuevaTransaccion = new Transaccion
+            {
+                MonedaTransaccion = monedaPorDefecto,
+                Fecha = !string.IsNullOrEmpty(fecha) && DateTime.TryParse(fecha, out var parsedDate) 
+                    ? parsedDate 
+                    : DateTime.Now,
+                Monto = monto ?? 0,
+                Descripcion = descripcionOcr ?? "Compra con ticket",
+                Tipo = TipoTransaccion.Egreso
+            };
+
+            // Pasar información del OCR a la vista
+            ViewBag.RutaImagen = rutaImagen;
+            ViewBag.TextoCompleto = textoCompleto;
+            ViewBag.Confianza = confianza;
+            ViewBag.Establecimiento = establecimiento;
+            
+            if (!string.IsNullOrEmpty(mensajes))
+            {
+                ViewBag.MensajesOcr = mensajes.Split('|').ToList();
+            }
+
+            return View(nuevaTransaccion);
         }
     }
 }

@@ -121,13 +121,19 @@
   "prefer_related_applications": false,
   "related_applications": [],
   "share_target": {
-    "action": "/Transacciones/Create",
-    "method": "GET",
-    "enctype": "application/x-www-form-urlencoded",
+    "action": "/Transacciones/CreateFromShare",
+    "method": "POST",
+    "enctype": "multipart/form-data",
     "params": {
       "title": "descripcion",
       "text": "nota",
-      "url": "referencia"
+      "url": "referencia",
+      "files": [
+        {
+          "name": "imagen",
+          "accept": ["image/*"]
+        }
+      ]
     }
   },
   "oauth2": {

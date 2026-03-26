@@ -1,0 +1,268 @@
+@model Transaccion
+
+@{
+    ViewData["Title"] = "?? Registrar desde Imagen";
+    var rutaImagen = ViewBag.RutaImagen as string;
+    var textoCompleto = ViewBag.TextoCompleto as string;
+    var confianza = ViewBag.Confianza as float?;
+    var establecimiento = ViewBag.Establecimiento as string;
+    var mensajesOcr = ViewBag.MensajesOcr as List<string> ?? new List<string>();
+}
+
+<!-- Header -->
+<div class="mb-6">
+    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">?? Registrar Gasto desde Imagen</h2>
+    <p class="text-slate-600 dark:text-slate-400">La imagen fue procesada automáticamente. Revisa y ajusta los datos según sea necesario.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Columna Izquierda: Imagen y Resultados OCR -->
+    <div class="space-y-6">
+        <!-- Imagen del Ticket -->
+        @if (!string.IsNullOrEmpty(rutaImagen))
+        {
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                    ??? Imagen Procesada
+                </h3>
+                <div class="rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-600">
+                    <img src="@rutaImagen" 
+                         alt="Ticket escaneado" 
+                         class="w-full h-auto max-h-96 object-contain bg-slate-50 dark:bg-slate-900" />
+                </div>
+            </div>
+        }
+
+        <!-- Resultados del OCR -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl shadow-lg border border-blue-200 dark:border-blue-700 p-6">
+            <h3 class="text-lg font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+                ?? Información Extraída Automáticamente
+            </h3>
+
+            <!-- Mensajes del OCR -->
+            @if (mensajesOcr.Any())
+            {
+                <div class="space-y-2 mb-4">
+                    @foreach (var mensaje in mensajesOcr)
+                    {
+                        <div class="flex items-start gap-2 text-sm">
+                            <span class="text-blue-600 dark:text-blue-400">?</span>
+                            <span class="text-slate-700 dark:text-slate-300">@mensaje</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (confianza.HasValue)
+            {
+                <div class="mt-4 p-3 bg-white dark:bg-slate-800 rounded-lg">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Confianza del OCR</span>
+                        <span class="text-sm font-bold text-blue-600 dark:text-blue-400">@confianza.Value.ToString("F1")%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all" 
+                             style="width: @(confianza.Value)%"></div>
+                    </div>
+                </div>
+            }
+
+            <!-- Texto Completo Extraído (Colapsable) -->
+            @if (!string.IsNullOrEmpty(textoCompleto))
+            {
+                <details class="mt-4">
+                    <summary class="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 transition">
+                        ?? Ver texto completo extraído
+                    </summary>
+                    <div class="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400 font-mono max-h-40 overflow-y-auto whitespace-pre-wrap">@textoCompleto</div>
+                </details>
+            }
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Formulario de Edición -->
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+            ?? Revisar y Completar Datos
+        </h3>
+
+        <form asp-action="Create" method="post" class="space-y-6">
+            <!-- Validation Summary -->
+            <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
+                <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    ??
+                    <span class="font-semibold">Por favor corrige los siguientes errores:</span>
+                </div>
+            </div>
+
+            <!-- Alerta informativa -->
+            <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg p-4">
+                <div class="flex items-start gap-2">
+                    <span class="text-amber-600 dark:text-amber-400 text-xl">??</span>
+                    <div class="text-sm text-amber-800 dark:text-amber-300">
+                        <p class="font-semibold mb-1">Revisa los datos extraídos</p>
+                        <p>El OCR puede cometer errores. Verifica que el monto, fecha y descripción sean correctos antes de guardar.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipo (Forzado a Egreso) -->
+            <input type="hidden" asp-for="Tipo" value="Egreso" />
+
+            <!-- Descripción -->
+            <div>
+                <label asp-for="Descripcion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    ?? Descripción
+                </label>
+                <input asp-for="Descripcion" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       placeholder="Ej. Supermercado, Gasolina..." 
+                       required />
+                <span asp-validation-for="Descripcion" class="text-red-600 text-sm mt-1"></span>
+                @if (!string.IsNullOrEmpty(establecimiento))
+                {
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        ?? Establecimiento detectado: <strong>@establecimiento</strong>
+                    </p>
+                }
+            </div>
+
+            <!-- Moneda -->
+            <div>
+                <label asp-for="MonedaTransaccion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    ?? Moneda
+                </label>
+                <select asp-for="MonedaTransaccion" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="Html.GetEnumSelectList<Moneda>()">
+                </select>
+            </div>
+
+            <!-- Monto -->
+            <div>
+                <label asp-for="Monto" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    ?? Monto
+                </label>
+                <div class="flex items-center gap-2">
+                    <span id="simboloMoneda" class="px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg border-2 border-slate-200 dark:border-slate-600">
+                        @ViewBag.SimboloMoneda
+                    </span>
+                    <input asp-for="Monto" 
+                           type="number" 
+                           step="0.01" 
+                           class="flex-1 px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-2xl font-bold focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                           required />
+                </div>
+                <span asp-validation-for="Monto" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Fecha -->
+            <div>
+                <label asp-for="Fecha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    ?? Fecha del Movimiento
+                </label>
+                <input asp-for="Fecha" 
+                       type="date" 
+                       class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                       required />
+                <span asp-validation-for="Fecha" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Cuenta -->
+            <div>
+                <label asp-for="CuentaId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    ?? ¿De qué cuenta?
+                </label>
+                <select asp-for="CuentaId" 
+                        id="CuentaId"
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CuentaId">
+                    <option value="">-- Selecciona una cuenta --</option>
+                </select>
+                <span asp-validation-for="CuentaId" class="text-red-600 text-sm mt-1"></span>
+            </div>
+
+            <!-- Categoría -->
+            <div id="divCategoria">
+                <label asp-for="CategoriaGastoId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    ??? Categoría
+                </label>
+                <select asp-for="CategoriaGastoId" 
+                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
+                        asp-items="ViewBag.CategoriaGastoId">
+                    <option value="">-- Selecciona una categoría --</option>
+                </select>
+            </div>
+
+            <!-- Opciones de Cuotas (Tarjeta de Crédito) -->
+            <div id="divCuotas" class="hidden bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-xl p-4">
+                <label class="block text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
+                    ?? Opciones de Pago (Tarjeta de Crédito)
+                </label>
+                <select name="numeroCuotas" 
+                        class="w-full px-4 py-3 border-2 border-blue-200 dark:border-blue-700 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition outline-none">
+                    <option value="1">1 Cuota (Pago normal este mes)</option>
+                    <option value="3">3 Cuotas (Sin intereses)</option>
+                    <option value="4">4 Cuotas (Sin intereses)</option>
+                    <option value="5">5 Cuotas (Sin intereses)</option>
+                </select>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                    ?? Se dividirá el monto en registros mensuales separados
+                </p>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                <button type="submit" 
+                        class="w-full py-3.5 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-blue-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
+                    ?? Guardar Transacción
+                </button>
+                
+                <a asp-action="Create" 
+                   class="block w-full py-3 text-center bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    ?? Registrar manualmente (sin OCR)
+                </a>
+            </div>
+
+            <!-- Back Link -->
+            <div class="text-center">
+                <a asp-action="Index" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium transition">
+                    ? Volver al historial
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        var tarjetasIds = @Html.Raw(ViewBag.TarjetasIds ?? "[]");
+
+        // Actualizar símbolo de moneda
+        document.querySelector('select[name="MonedaTransaccion"]').addEventListener('change', function() {
+            const moneda = this.value;
+            let simbolo = 'S/';
+            if (moneda === '1') simbolo = '$';
+            else if (moneda === '2') simbolo = '€';
+            document.getElementById('simboloMoneda').textContent = simbolo;
+        });
+
+        // Mostrar/ocultar opciones de cuotas
+        function evaluarMostrarCuotas() {
+            var cuentaSeleccionada = parseInt(document.getElementById('CuentaId').value);
+            var divCuotas = document.getElementById('divCuotas');
+            var esTarjeta = tarjetasIds.includes(cuentaSeleccionada);
+
+            if (esTarjeta) {
+                divCuotas.classList.remove('hidden');
+            } else {
+                divCuotas.classList.add('hidden');
+                document.getElementsByName('numeroCuotas')[0].value = '1';
+            }
+        }
+
+        document.getElementById('CuentaId').addEventListener('change', evaluarMostrarCuotas);
+        evaluarMostrarCuotas();
+    </script>
+}

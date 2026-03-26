@@ -40,6 +40,7 @@ builder.Services.AddHangfireServer();
 builder.Services.AddScoped<AutomatizacionService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<PushNotificationService>();
+builder.Services.AddScoped<OcrService>();
 
 var app = builder.Build();
 
@@ -90,4 +91,4 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Esta línea debe ser la ÚLTIMA
-app.Run();
+app.Run();app.Run();
