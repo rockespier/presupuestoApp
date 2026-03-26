@@ -2,20 +2,51 @@
 
 ## ? Descarga Rápida (Recomendado)
 
-### Opción 1: Descarga Manual con PowerShell
+### ???????? Opción 1: Español + Italiano (Multiidioma)
 
-Ejecuta este comando desde la raíz del proyecto:
+Ejecuta estos comandos desde la raíz del proyecto:
+
+```powershell
+# Descargar archivo de entrenamiento en español
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata" -OutFile "src\tessdata\spa.traineddata"
+
+# Descargar archivo de entrenamiento en italiano
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata" -OutFile "src\tessdata\ita.traineddata"
+```
+
+**?? Tip:** El sistema detecta automáticamente ambos idiomas y los usa simultáneamente para mejor precisión.
+
+---
+
+### ???? Opción 2: Solo Español
 
 ```powershell
 # Descargar archivo de entrenamiento en español
 Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata" -OutFile "src\tessdata\spa.traineddata"
 ```
 
-### Opción 2: Descarga desde el Navegador
+---
 
+### ???? Opción 3: Solo Italiano
+
+```powershell
+# Descargar archivo de entrenamiento en italiano
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata" -OutFile "src\tessdata\ita.traineddata"
+```
+
+---
+
+### ?? Opción 4: Descarga desde el Navegador
+
+**Español:**
 1. Ve a: https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata
 2. Guarda el archivo como `spa.traineddata`
 3. Colócalo en: `src\tessdata\spa.traineddata`
+
+**Italiano:**
+1. Ve a: https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata
+2. Guarda el archivo como `ita.traineddata`
+3. Colócalo en: `src\tessdata\ita.traineddata`
 
 ---
 
@@ -38,25 +69,37 @@ Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/por.t
 Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/fra.traineddata" -OutFile "src\tessdata\fra.traineddata"
 ```
 
+### Alemán (German):
+```powershell
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/deu.traineddata" -OutFile "src\tessdata\deu.traineddata"
+```
+
 ---
 
 ## ? Verificar Instalación
 
-Después de descargar, verifica que el archivo existe:
+Después de descargar, verifica que los archivos existen:
 
 ```powershell
-Test-Path "src\tessdata\spa.traineddata"
+# Verificar español
+Test-Path "src\tessdata\spa.traineddata"  # Debe retornar: True
+
+# Verificar italiano
+Test-Path "src\tessdata\ita.traineddata"  # Debe retornar: True
+
+# Listar todos los archivos descargados
+Get-ChildItem "src\tessdata\" -Filter "*.traineddata"
 ```
 
-Debería retornar: `True`
-
-Verifica el tamaño del archivo:
+Verifica el tamaño de los archivos:
 
 ```powershell
-(Get-Item "src\tessdata\spa.traineddata").Length / 1MB
-```
+# Español
+(Get-Item "src\tessdata\spa.traineddata").Length / 1MB  # ~11 MB
 
-Debería ser aproximadamente: **11-12 MB**
+# Italiano
+(Get-Item "src\tessdata\ita.traineddata").Length / 1MB  # ~15 MB
+```
 
 ---
 
@@ -73,6 +116,7 @@ Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/spa.t
 **Solución 2:** Usar curl (si está disponible)
 ```powershell
 curl -L -o "src\tessdata\spa.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata"
+curl -L -o "src\tessdata\ita.traineddata" "https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata"
 ```
 
 **Solución 3:** Descarga manual desde navegador
@@ -82,27 +126,23 @@ curl -L -o "src\tessdata\spa.traineddata" "https://github.com/tesseract-ocr/tess
 **Verificar integridad:**
 ```powershell
 Get-FileHash "src\tessdata\spa.traineddata" -Algorithm SHA256
+Get-FileHash "src\tessdata\ita.traineddata" -Algorithm SHA256
 ```
 
-Hash esperado (puede variar con actualizaciones):
-```
-SHA256: (consultar repositorio oficial)
-```
-
-Si el hash no coincide, borra el archivo y descarga nuevamente.
+Si el hash no coincide con el oficial, borra el archivo y descarga nuevamente.
 
 ---
 
 ## ?? Archivos de Entrenamiento Disponibles
 
-| Idioma | Código | Archivo | Tamaño Aprox. |
-|--------|--------|---------|---------------|
-| Español | spa | spa.traineddata | 11 MB |
-| Inglés | eng | eng.traineddata | 24 MB |
-| Portugués | por | por.traineddata | 15 MB |
-| Francés | fra | fra.traineddata | 18 MB |
-| Alemán | deu | deu.traineddata | 20 MB |
-| Italiano | ita | ita.traineddata | 17 MB |
+| Idioma | Código | Archivo | Tamaño Aprox. | Prioridad |
+|--------|--------|---------|---------------|-----------|
+| ???? Español | spa | spa.traineddata | 11 MB | ? Obligatorio |
+| ???? Italiano | ita | ita.traineddata | 15 MB | ? Obligatorio |
+| ???? Inglés | eng | eng.traineddata | 24 MB | ?? Opcional |
+| ???? Portugués | por | por.traineddata | 15 MB | ?? Opcional |
+| ???? Francés | fra | fra.traineddata | 18 MB | ?? Opcional |
+| ???? Alemán | deu | deu.traineddata | 20 MB | ?? Opcional |
 
 **Repositorio oficial:**
 https://github.com/tesseract-ocr/tessdata
@@ -111,12 +151,20 @@ https://github.com/tesseract-ocr/tessdata
 
 ## ?? Uso en la Aplicación
 
-Una vez descargado el archivo, la aplicación automáticamente:
+Una vez descargados los archivos, la aplicación automáticamente:
 
-1. ? Detecta el archivo `spa.traineddata` en `src/tessdata/`
+1. ? Detecta los archivos disponibles en `src/tessdata/`
 2. ? Inicializa el motor de Tesseract OCR
-3. ? Procesa las imágenes compartidas
-4. ? Extrae información de tickets en español
+3. ? Usa **todos los idiomas disponibles simultáneamente**
+4. ? Extrae información de tickets en español e italiano
+5. ? Logs informativos sobre idiomas activos
+
+**Ejemplo de log:**
+```
+?? Idiomas activos para OCR: spa+ita
+? Idioma encontrado: Español (spa.traineddata)
+? Idioma encontrado: Italiano (ita.traineddata)
+```
 
 **No se requiere configuración adicional.**
 
@@ -127,22 +175,28 @@ Una vez descargado el archivo, la aplicación automáticamente:
 Para actualizar a una versión más reciente:
 
 ```powershell
-# Respaldar archivo actual
+# Respaldar archivos actuales
 Copy-Item "src\tessdata\spa.traineddata" "src\tessdata\spa.traineddata.backup"
+Copy-Item "src\tessdata\ita.traineddata" "src\tessdata\ita.traineddata.backup"
 
-# Descargar nueva versión
+# Descargar nuevas versiones
 Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata" -OutFile "src\tessdata\spa.traineddata"
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata" -OutFile "src\tessdata\ita.traineddata"
 ```
 
 ---
 
 ## ?? Tamaño Total de la Carpeta tessdata
 
-Solo español: **~11 MB**
+| Configuración | Tamaño Total |
+|---------------|--------------|
+| Solo español | ~11 MB |
+| Solo italiano | ~15 MB |
+| **Español + Italiano** | **~26 MB** ? |
+| Español + Italiano + Inglés | ~50 MB |
+| Todos los idiomas (6) | ~120 MB |
 
-Con múltiples idiomas (esp + eng + por): **~50 MB**
-
-**Recomendación:** Solo descarga los idiomas que realmente necesites.
+**Recomendación:** Descarga español + italiano para cobertura completa.
 
 ---
 
@@ -152,7 +206,9 @@ Ejecuta la aplicación y comprueba los logs:
 
 ```
 ? Carpeta tessdata encontrada
-? Archivo spa.traineddata cargado correctamente
+? Idioma encontrado: Español (spa.traineddata)
+? Idioma encontrado: Italiano (ita.traineddata)
+?? Idiomas activos para OCR: spa+ita
 ?? Motor Tesseract inicializado
 ```
 
@@ -162,16 +218,16 @@ Si ves estos mensajes, ¡todo está listo! ??
 
 ## ?? Nota Importante
 
-El archivo `spa.traineddata` **NO debe** incluirse en el control de versiones (Git) debido a su tamaño.
+Los archivos `.traineddata` **NO deben** incluirse en el control de versiones (Git) debido a su tamaño.
 
-Ya está agregado al `.gitignore`:
+Ya están agregados al `.gitignore`:
 ```
 src/tessdata/*.traineddata
 ```
 
-Cada desarrollador debe descargarlo localmente.
+Cada desarrollador debe descargarlos localmente.
 
-En producción/servidor, incluir el archivo como parte del proceso de deployment.
+En producción/servidor, incluir los archivos como parte del proceso de deployment.
 
 ---
 
@@ -179,10 +235,10 @@ En producción/servidor, incluir el archivo como parte del proceso de deployment.
 
 Si tienes problemas con la descarga o instalación:
 
-1. Revisa los logs de la aplicación
+1. Revisa los logs de la aplicación (busca emojis: ??, ?, ??)
 2. Verifica permisos de escritura en `src/tessdata/`
 3. Comprueba tu conexión a internet
-4. Consulta el README principal del proyecto
+4. Consulta `OCR-MULTIIDIOMA.md` para más detalles
 
 ---
 
@@ -192,3 +248,26 @@ Si tienes problemas con la descarga o instalación:
 - [Tessdata Repository](https://github.com/tesseract-ocr/tessdata)
 - [Tesseract Documentation](https://tesseract-ocr.github.io/)
 - [Language Codes](https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html)
+- [Multi-language OCR Guide](https://tesseract-ocr.github.io/tessdoc/Data-Files.html#multi-language-data)
+
+---
+
+## ?? Listo para Empezar
+
+**Comando rápido para configuración completa:**
+
+```powershell
+# Descargar español + italiano
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata" -OutFile "src\tessdata\spa.traineddata"
+Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata" -OutFile "src\tessdata\ita.traineddata"
+
+# Verificar instalación
+Test-Path "src\tessdata\spa.traineddata"
+Test-Path "src\tessdata\ita.traineddata"
+
+# Ejecutar aplicación
+cd src
+dotnet run
+```
+
+**¡Disfruta tu OCR multiidioma!** ???????????

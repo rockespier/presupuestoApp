@@ -8,6 +8,7 @@ namespace PresupuestoFamiliarApp.Servicios
     /// <summary>
     /// Servicio para procesar imágenes de tickets/facturas y extraer información
     /// mediante OCR (Optical Character Recognition)
+    /// Soporta múltiples idiomas: Español e Italiano
     /// </summary>
     public class OcrService
     {
@@ -15,6 +16,7 @@ namespace PresupuestoFamiliarApp.Servicios
         private readonly ILogger<OcrService> _logger;
         private readonly string _tessDataPath;
         private readonly string _uploadsPath;
+        private readonly string[] _idiomasDisponibles;
 
         public OcrService(IWebHostEnvironment environment, ILogger<OcrService> logger)
         {
@@ -26,6 +28,9 @@ namespace PresupuestoFamiliarApp.Servicios
             
             // Ruta donde se guardarán las imágenes subidas
             _uploadsPath = Path.Combine(_environment.WebRootPath, "uploads", "tickets");
+            
+            // Idiomas que buscamos (orden de prioridad)
+            _idiomasDisponibles = new[] { "spa", "ita", "eng" };
             
             // Crear directorios si no existen
             if (!Directory.Exists(_tessDataPath))
@@ -43,6 +48,7 @@ namespace PresupuestoFamiliarApp.Servicios
 
         /// <summary>
         /// Procesa una imagen de ticket y extrae información mediante OCR
+        /// Detecta automáticamente si usar español, italiano o ambos
         /// </summary>
         public async Task<TransaccionOcrResult> ProcesarTicket(IFormFile imagen)
         {
@@ -64,22 +70,29 @@ namespace PresupuestoFamiliarApp.Servicios
                 resultado.RutaImagen = $"/uploads/tickets/{nombreArchivo}";
                 _logger.LogInformation($"?? Imagen guardada en: {resultado.RutaImagen}");
 
-                // 2. Verificar que existe el archivo de entrenamiento de Tesseract
-                var spanishDataFile = Path.Combine(_tessDataPath, "spa.traineddata");
-                if (!File.Exists(spanishDataFile))
+                // 2. Detectar qué idiomas están disponibles
+                var idiomasActivos = DetectarIdiomasDisponibles();
+                
+                if (idiomasActivos.Count == 0)
                 {
-                    _logger.LogError($"? No se encontró el archivo de entrenamiento OCR: {spanishDataFile}");
-                    resultado.Mensajes.Add("?? No se encontró el archivo de entrenamiento OCR para español.");
-                    resultado.Mensajes.Add("?? Descarga 'spa.traineddata' desde:");
-                    resultado.Mensajes.Add("   https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata");
-                    resultado.Mensajes.Add($"?? Y colócalo en: {_tessDataPath}");
+                    _logger.LogError($"? No se encontraron archivos de entrenamiento OCR");
+                    resultado.Mensajes.Add("?? No se encontraron archivos de entrenamiento OCR.");
+                    resultado.Mensajes.Add("?? Descarga los archivos necesarios:");
+                    resultado.Mensajes.Add("   - Español: https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata");
+                    resultado.Mensajes.Add("   - Italiano: https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata");
+                    resultado.Mensajes.Add($"?? Y colócalos en: {_tessDataPath}");
                     resultado.ExitosoExtraccion = false;
                     return resultado;
                 }
 
-                // 3. Ejecutar OCR
+                // 3. Crear cadena de idiomas para Tesseract (ej: "spa+ita")
+                var cadenaIdiomas = string.Join("+", idiomasActivos);
+                _logger.LogInformation($"?? Idiomas activos para OCR: {cadenaIdiomas}");
+                resultado.Mensajes.Add($"?? Procesando con idiomas: {string.Join(", ", idiomasActivos.Select(ObtenerNombreIdioma))}");
+
+                // 4. Ejecutar OCR con múltiples idiomas
                 _logger.LogInformation("?? Ejecutando Tesseract OCR...");
-                using (var engine = new TesseractEngine(_tessDataPath, "spa", EngineMode.Default))
+                using (var engine = new TesseractEngine(_tessDataPath, cadenaIdiomas, EngineMode.Default))
                 {
                     using (var img = Pix.LoadFromFile(rutaCompleta))
                     {
@@ -94,7 +107,7 @@ namespace PresupuestoFamiliarApp.Servicios
                     }
                 }
 
-                // 4. Extraer información específica del texto
+                // 5. Extraer información específica del texto
                 ExtraerInformacion(resultado);
 
                 resultado.ExitosoExtraccion = true;
@@ -134,7 +147,46 @@ namespace PresupuestoFamiliarApp.Servicios
         }
 
         /// <summary>
+        /// Detecta qué archivos de idioma están disponibles en el sistema
+        /// </summary>
+        private List<string> DetectarIdiomasDisponibles()
+        {
+            var idiomasEncontrados = new List<string>();
+
+            foreach (var idioma in _idiomasDisponibles)
+            {
+                var archivoIdioma = Path.Combine(_tessDataPath, $"{idioma}.traineddata");
+                if (File.Exists(archivoIdioma))
+                {
+                    idiomasEncontrados.Add(idioma);
+                    _logger.LogInformation($"? Idioma encontrado: {ObtenerNombreIdioma(idioma)} ({idioma}.traineddata)");
+                }
+                else
+                {
+                    _logger.LogWarning($"?? Idioma NO encontrado: {ObtenerNombreIdioma(idioma)} ({idioma}.traineddata)");
+                }
+            }
+
+            return idiomasEncontrados;
+        }
+
+        /// <summary>
+        /// Obtiene el nombre completo del idioma desde su código
+        /// </summary>
+        private string ObtenerNombreIdioma(string codigo)
+        {
+            return codigo switch
+            {
+                "spa" => "Español",
+                "ita" => "Italiano",
+                "eng" => "Inglés",
+                _ => codigo.ToUpper()
+            };
+        }
+
+        /// <summary>
         /// Extrae información estructurada del texto OCR
+        /// Soporta patrones en español e italiano
         /// </summary>
         private void ExtraerInformacion(TransaccionOcrResult resultado)
         {
@@ -147,14 +199,17 @@ namespace PresupuestoFamiliarApp.Servicios
             var lineas = resultado.TextoCompleto.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             _logger.LogDebug($"?? Analizando {lineas.Length} líneas de texto");
 
-            // 1. Extraer MONTO
-            // Patrones comunes: "Total: 45.50", "TOTAL S/ 45.50", "$45.50", "45.50 USD"
+            // 1. Extraer MONTO (patrones en español e italiano)
             var patronesMonto = new[]
             {
-                @"(?:total|importe|monto|precio|pagar|pagado|subtotal|neto)[\s:]*[S/$€]?\s*(\d+[.,]\d{2})", // Total: 45.50
-                @"[S/$€]\s*(\d+[.,]\d{2})", // $ 45.50
-                @"(\d+[.,]\d{2})\s*(?:soles|dolares|usd|pen|eur|dollars)", // 45.50 soles
-                @"\b(\d{1,5}[.,]\d{2})\b" // Cualquier número con 2 decimales
+                // Español
+                @"(?:total|importe|monto|precio|pagar|pagado|subtotal|neto)[\s:]*[S/$€]?\s*(\d+[.,]\d{2})",
+                // Italiano
+                @"(?:totale|importo|prezzo|pagare|subtotale|netto)[\s:]*[S/$€]?\s*(\d+[.,]\d{2})",
+                // Genérico
+                @"[S/$€]\s*(\d+[.,]\d{2})",
+                @"(\d+[.,]\d{2})\s*(?:soles|dolares|usd|pen|eur|euro|dollars)",
+                @"\b(\d{1,5}[.,]\d{2})\b"
             };
 
             foreach (var patron in patronesMonto)
@@ -172,12 +227,11 @@ namespace PresupuestoFamiliarApp.Servicios
                 }
             }
 
-            // 2. Extraer FECHA
-            // Patrones: "25/12/2024", "25-12-2024", "2024-12-25"
+            // 2. Extraer FECHA (formatos españoles e italianos)
             var patronesFecha = new[]
             {
-                @"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", // 25/12/2024 o 25/12/24
-                @"(\d{4}[/-]\d{1,2}[/-]\d{1,2})", // 2024-12-25
+                @"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", // DD/MM/YYYY (común en ambos)
+                @"(\d{4}[/-]\d{1,2}[/-]\d{1,2})", // YYYY-MM-DD
             };
 
             foreach (var patron in patronesFecha)
@@ -187,7 +241,6 @@ namespace PresupuestoFamiliarApp.Servicios
                 {
                     var fechaStr = match.Groups[1].Value;
                     
-                    // Intentar parsear con múltiples formatos
                     var formatos = new[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yy", "dd-MM-yy", "yyyy-MM-dd", "yyyy/MM/dd" };
                     
                     foreach (var formato in formatos)
@@ -205,14 +258,13 @@ namespace PresupuestoFamiliarApp.Servicios
                 }
             }
 
-            // Si no se encontró fecha, usar la fecha actual
             if (!resultado.Fecha.HasValue)
             {
                 resultado.Fecha = DateTime.Now;
                 _logger.LogDebug("?? No se encontró fecha en el ticket, usando fecha actual");
             }
 
-            // 3. Extraer ESTABLECIMIENTO (generalmente en las primeras líneas)
+            // 3. Extraer ESTABLECIMIENTO
             if (lineas.Length > 0)
             {
                 var primerasLineas = lineas.Take(5).ToList();
@@ -220,9 +272,11 @@ namespace PresupuestoFamiliarApp.Servicios
                 {
                     var lineaLimpia = linea.Trim();
                     
-                    // Buscar líneas con al menos 3 caracteres que no sean solo números
-                    // y que no contengan palabras técnicas comunes en tickets
-                    var palabrasIgnorar = new[] { "ticket", "factura", "boleta", "ruc", "fecha", "hora", "nit", "tel", "phone" };
+                    // Palabras a ignorar (español e italiano)
+                    var palabrasIgnorar = new[] { 
+                        "ticket", "factura", "boleta", "ruc", "fecha", "hora", "nit", "tel", "phone",
+                        "scontrino", "fattura", "ricevuta", "data", "ora", "tel", "telefono" 
+                    };
                     
                     if (lineaLimpia.Length >= 3 
                         && lineaLimpia.Length <= 50 
@@ -236,9 +290,14 @@ namespace PresupuestoFamiliarApp.Servicios
                 }
             }
 
-            // 4. Extraer DESCRIPCIÓN (conceptos principales)
+            // 4. Extraer DESCRIPCIÓN (palabras clave en español e italiano)
             var conceptos = new List<string>();
-            var palabrasClave = new[] { "producto", "servicio", "artículo", "item", "concepto", "descripción" };
+            var palabrasClave = new[] { 
+                // Español
+                "producto", "servicio", "artículo", "item", "concepto", "descripción",
+                // Italiano
+                "prodotto", "servizio", "articolo", "voce", "descrizione" 
+            };
             
             foreach (var linea in lineas)
             {

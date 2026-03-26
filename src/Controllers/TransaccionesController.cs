@@ -699,5 +699,46 @@ namespace PresupuestoFamiliarApp.Controllers
 
             return View(nuevaTransaccion);
         }
+
+        // GET: Vista de prueba para OCR (Testing en Windows/iPhone)
+        [HttpGet]
+        public IActionResult TestOcr()
+        {
+            return View();
+        }
+
+        // POST: Procesar imagen de prueba con OCR
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TestOcr(IFormFile imagen)
+        {
+            if (imagen == null || imagen.Length == 0)
+            {
+                TempData["Error"] = "Por favor selecciona una imagen";
+                return View();
+            }
+
+            try
+            {
+                var resultado = await _ocrService.ProcesarTicket(imagen);
+                
+                // Redirigir a la vista de creación con los datos extraídos
+                return RedirectToAction(nameof(CreateFromImage), new { 
+                    monto = resultado.Monto,
+                    fecha = resultado.Fecha?.ToString("yyyy-MM-dd"),
+                    descripcionOcr = resultado.Descripcion,
+                    establecimiento = resultado.Establecimiento,
+                    rutaImagen = resultado.RutaImagen,
+                    textoCompleto = resultado.TextoCompleto,
+                    confianza = resultado.Confianza,
+                    mensajes = string.Join("|", resultado.Mensajes)
+                });
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error al procesar la imagen: {ex.Message}";
+                return View();
+            }
+        }
     }
 }
