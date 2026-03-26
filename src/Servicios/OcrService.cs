@@ -6,9 +6,9 @@ using System.Globalization;
 namespace PresupuestoFamiliarApp.Servicios
 {
     /// <summary>
-    /// Servicio para procesar im·genes de tickets/facturas y extraer informaciÛn
+    /// Servicio para procesar im√°genes de tickets/facturas y extraer informaci√≥n
     /// mediante OCR (Optical Character Recognition)
-    /// Soporta m˙ltiples idiomas: EspaÒol e Italiano
+    /// Soporta m√∫ltiples idiomas: Espa√±ol e Italiano
     /// </summary>
     public class OcrService
     {
@@ -23,10 +23,10 @@ namespace PresupuestoFamiliarApp.Servicios
             _environment = environment;
             _logger = logger;
             
-            // Ruta donde est·n los archivos de entrenamiento de Tesseract
+            // Ruta donde est√°n los archivos de entrenamiento de Tesseract
             _tessDataPath = Path.Combine(_environment.ContentRootPath, "tessdata");
             
-            // Ruta donde se guardar·n las im·genes subidas
+            // Ruta donde se guardar√°n las im√°genes subidas
             _uploadsPath = Path.Combine(_environment.WebRootPath, "uploads", "tickets");
             
             // Idiomas que buscamos (orden de prioridad)
@@ -36,19 +36,19 @@ namespace PresupuestoFamiliarApp.Servicios
             if (!Directory.Exists(_tessDataPath))
             {
                 Directory.CreateDirectory(_tessDataPath);
-                _logger.LogWarning($"?? Carpeta tessdata creada en: {_tessDataPath}");
+                _logger.LogWarning($"Carpeta tessdata creada en: {_tessDataPath}");
             }
             
             if (!Directory.Exists(_uploadsPath))
             {
                 Directory.CreateDirectory(_uploadsPath);
-                _logger.LogInformation($"?? Carpeta uploads/tickets creada en: {_uploadsPath}");
+                _logger.LogInformation($"Carpeta uploads/tickets creada en: {_uploadsPath}");
             }
         }
 
         /// <summary>
-        /// Procesa una imagen de ticket y extrae informaciÛn mediante OCR
-        /// Detecta autom·ticamente si usar espaÒol, italiano o ambos
+        /// Procesa una imagen de ticket y extrae informaci√≥n mediante OCR
+        /// Detecta automÔøΩticamente si usar espaÔøΩol, italiano o ambos
         /// </summary>
         public async Task<TransaccionOcrResult> ProcesarTicket(IFormFile imagen)
         {
@@ -56,9 +56,20 @@ namespace PresupuestoFamiliarApp.Servicios
 
             try
             {
-                _logger.LogInformation($"?? Procesando imagen: {imagen.FileName} ({imagen.Length} bytes)");
+                _logger.LogInformation($"Procesando imagen: {imagen.FileName} ({imagen.Length} bytes)");
 
-                // 1. Guardar la imagen
+                // 1. Validar formato antes de procesar
+                if (!EsFormatoSoportado(imagen))
+                {
+                    resultado.ExitosoExtraccion = false;
+                    resultado.Mensajes.Add("‚ö†Ô∏è Formato de imagen no compatible.");
+                    resultado.Mensajes.Add("üì± En iPhone: usa la opci√≥n 'M√°s compatible' en Ajustes > C√°mara > Formatos, o selecciona la imagen desde la Galer√≠a.");
+                    resultado.Mensajes.Add("‚úÖ Formatos aceptados: JPG, PNG, WebP, GIF");
+                    _logger.LogWarning($"Formato no soportado: {imagen.ContentType} / {Path.GetExtension(imagen.FileName)}");
+                    return resultado;
+                }
+
+                // 2. Guardar la imagen
                 var nombreArchivo = $"{Guid.NewGuid()}_{Path.GetFileName(imagen.FileName)}";
                 var rutaCompleta = Path.Combine(_uploadsPath, nombreArchivo);
                 
@@ -68,30 +79,30 @@ namespace PresupuestoFamiliarApp.Servicios
                 }
                 
                 resultado.RutaImagen = $"/uploads/tickets/{nombreArchivo}";
-                _logger.LogInformation($"?? Imagen guardada en: {resultado.RutaImagen}");
+                _logger.LogInformation($"Imagen guardada en: {resultado.RutaImagen}");
 
-                // 2. Detectar quÈ idiomas est·n disponibles
+                // 3. Detectar qu√© idiomas est√°n disponibles
                 var idiomasActivos = DetectarIdiomasDisponibles();
                 
                 if (idiomasActivos.Count == 0)
                 {
-                    _logger.LogError($"? No se encontraron archivos de entrenamiento OCR");
-                    resultado.Mensajes.Add("?? No se encontraron archivos de entrenamiento OCR.");
-                    resultado.Mensajes.Add("?? Descarga los archivos necesarios:");
-                    resultado.Mensajes.Add("   - EspaÒol: https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata");
+                    _logger.LogError("No se encontraron archivos de entrenamiento OCR");
+                    resultado.Mensajes.Add("‚ö†Ô∏è No se encontraron archivos de entrenamiento OCR.");
+                    resultado.Mensajes.Add("üì• Descarga los archivos necesarios:");
+                    resultado.Mensajes.Add("   - Espa√±ol: https://github.com/tesseract-ocr/tessdata/raw/main/spa.traineddata");
                     resultado.Mensajes.Add("   - Italiano: https://github.com/tesseract-ocr/tessdata/raw/main/ita.traineddata");
-                    resultado.Mensajes.Add($"?? Y colÛcalos en: {_tessDataPath}");
+                    resultado.Mensajes.Add($"üìÅ Y col√≥calos en: {_tessDataPath}");
                     resultado.ExitosoExtraccion = false;
                     return resultado;
                 }
 
-                // 3. Crear cadena de idiomas para Tesseract (ej: "spa+ita")
+                // 4. Crear cadena de idiomas para Tesseract (ej: "spa+ita")
                 var cadenaIdiomas = string.Join("+", idiomasActivos);
-                _logger.LogInformation($"?? Idiomas activos para OCR: {cadenaIdiomas}");
-                resultado.Mensajes.Add($"?? Procesando con idiomas: {string.Join(", ", idiomasActivos.Select(ObtenerNombreIdioma))}");
+                _logger.LogInformation($"Idiomas activos para OCR: {cadenaIdiomas}");
+                resultado.Mensajes.Add($"üåê Procesando con idiomas: {string.Join(", ", idiomasActivos.Select(ObtenerNombreIdioma))}");
 
-                // 4. Ejecutar OCR con m˙ltiples idiomas
-                _logger.LogInformation("?? Ejecutando Tesseract OCR...");
+                // 5. Ejecutar OCR con m√∫ltiples idiomas
+                _logger.LogInformation("Ejecutando Tesseract OCR...");
                 using (var engine = new TesseractEngine(_tessDataPath, cadenaIdiomas, EngineMode.Default))
                 {
                     using (var img = Pix.LoadFromFile(rutaCompleta))
@@ -101,45 +112,45 @@ namespace PresupuestoFamiliarApp.Servicios
                             resultado.TextoCompleto = page.GetText();
                             resultado.Confianza = page.GetMeanConfidence() * 100;
                             
-                            _logger.LogInformation($"? OCR completado con confianza: {resultado.Confianza:F1}%");
-                            _logger.LogDebug($"?? Texto extraÌdo: {resultado.TextoCompleto.Substring(0, Math.Min(100, resultado.TextoCompleto.Length))}...");
+                            _logger.LogInformation($"OCR completado con confianza: {resultado.Confianza:F1}%");
+                            _logger.LogDebug($"Texto extra√≠do: {resultado.TextoCompleto.Substring(0, Math.Min(100, resultado.TextoCompleto.Length))}...");
                         }
                     }
                 }
 
-                // 5. Extraer informaciÛn especÌfica del texto
+                // 6. Extraer informaci√≥n espec√≠fica del texto
                 ExtraerInformacion(resultado);
 
                 resultado.ExitosoExtraccion = true;
-                resultado.Mensajes.Add($"? Imagen procesada exitosamente (Confianza: {resultado.Confianza:F1}%)");
+                resultado.Mensajes.Add($"‚úÖ Imagen procesada exitosamente (Confianza: {resultado.Confianza:F1}%)");
                 
                 if (resultado.Monto.HasValue)
                 {
-                    resultado.Mensajes.Add($"?? Monto detectado: {resultado.Monto:F2}");
-                    _logger.LogInformation($"?? Monto extraÌdo: {resultado.Monto:F2}");
+                    resultado.Mensajes.Add($"üí∞ Monto detectado: {resultado.Monto:F2}");
+                    _logger.LogInformation($"Monto extra√≠do: {resultado.Monto:F2}");
                 }
                 
                 if (resultado.Fecha.HasValue)
                 {
-                    resultado.Mensajes.Add($"?? Fecha detectada: {resultado.Fecha:dd/MM/yyyy}");
-                    _logger.LogInformation($"?? Fecha extraÌda: {resultado.Fecha:dd/MM/yyyy}");
+                    resultado.Mensajes.Add($"üìÖ Fecha detectada: {resultado.Fecha:dd/MM/yyyy}");
+                    _logger.LogInformation($"Fecha extra√≠da: {resultado.Fecha:dd/MM/yyyy}");
                 }
                 
                 if (!string.IsNullOrEmpty(resultado.Establecimiento))
                 {
-                    resultado.Mensajes.Add($"?? Establecimiento: {resultado.Establecimiento}");
-                    _logger.LogInformation($"?? Establecimiento extraÌdo: {resultado.Establecimiento}");
+                    resultado.Mensajes.Add($"üè™ Establecimiento: {resultado.Establecimiento}");
+                    _logger.LogInformation($"Establecimiento extra√≠do: {resultado.Establecimiento}");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "? Error al procesar imagen con OCR");
+                _logger.LogError(ex, "Error al procesar imagen con OCR");
                 resultado.ExitosoExtraccion = false;
-                resultado.Mensajes.Add($"? Error: {ex.Message}");
+                resultado.Mensajes.Add($"‚ùå Error: {ex.Message}");
                 
                 if (ex.InnerException != null)
                 {
-                    _logger.LogError($"   Detalle: {ex.InnerException.Message}");
+                    _logger.LogError($"Detalle: {ex.InnerException.Message}");
                 }
             }
 
@@ -147,7 +158,68 @@ namespace PresupuestoFamiliarApp.Servicios
         }
 
         /// <summary>
-        /// Detecta quÈ archivos de idioma est·n disponibles en el sistema
+        /// Valida si el formato del archivo es compatible con Tesseract OCR.
+        /// Detecta HEIC/HEIF (formato nativo de iPhone) y otros formatos no soportados
+        /// comprobando tanto el Content-Type como la firma de bytes del archivo.
+        /// </summary>
+        private bool EsFormatoSoportado(IFormFile imagen)
+        {
+            // Tipos MIME aceptados
+            var tiposAceptados = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                // "image/jpg" is non-standard but some browsers send it alongside the correct "image/jpeg"
+                "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/bmp", "image/tiff"
+            };
+
+            // Tipos MIME rechazados expl√≠citamente (HEIC/HEIF = formato iPhone)
+            var tiposHeic = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "image/heic", "image/heif", "image/heic-sequence", "image/heif-sequence"
+            };
+
+            if (tiposHeic.Contains(imagen.ContentType))
+                return false;
+
+            if (!tiposAceptados.Contains(imagen.ContentType))
+            {
+                // Verificar por extensi√≥n como respaldo
+                var extension = Path.GetExtension(imagen.FileName).ToLowerInvariant();
+                var extensionesAceptadas = new HashSet<string> { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tiff", ".tif" };
+                var extensionesHeic = new HashSet<string> { ".heic", ".heif" };
+
+                if (extensionesHeic.Contains(extension))
+                    return false;
+
+                if (!extensionesAceptadas.Contains(extension))
+                    return false;
+            }
+
+            // Verificar firma de bytes (magic bytes) para detectar HEIC aunque venga con Content-Type incorrecto
+            using var stream = imagen.OpenReadStream();
+            var header = new byte[12];
+            var bytesRead = stream.Read(header, 0, header.Length);
+
+            if (bytesRead >= 12)
+            {
+                // HEIC/HEIF: bytes 4-7 contienen 'ftyp', bytes 8-11 contienen la marca
+                if (header[4] == 0x66 && header[5] == 0x74 && header[6] == 0x79 && header[7] == 0x70)
+                {
+                    // Es un archivo ISOBMFF (MP4/MOV/HEIC/HEIF)
+                    var brand = System.Text.Encoding.ASCII.GetString(header, 8, 4);
+                    // Known HEIC/HEIF brand codes per ISO/IEC 23008-12:
+                    // heic/heix = HEIC image, hevc/hevx = HEVC-based, heim/heis/hevm/hevs = multi-image,
+                    // mif1/msf1 = generic HEIF container
+                    var heicBrands = new HashSet<string> { "heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1" };
+                    if (heicBrands.Contains(brand.ToLower()))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Detecta qu√© archivos de idioma est√°n disponibles en el sistema
         /// </summary>
         private List<string> DetectarIdiomasDisponibles()
         {
@@ -159,11 +231,11 @@ namespace PresupuestoFamiliarApp.Servicios
                 if (File.Exists(archivoIdioma))
                 {
                     idiomasEncontrados.Add(idioma);
-                    _logger.LogInformation($"? Idioma encontrado: {ObtenerNombreIdioma(idioma)} ({idioma}.traineddata)");
+                    _logger.LogInformation($"Idioma encontrado: {ObtenerNombreIdioma(idioma)} ({idioma}.traineddata)");
                 }
                 else
                 {
-                    _logger.LogWarning($"?? Idioma NO encontrado: {ObtenerNombreIdioma(idioma)} ({idioma}.traineddata)");
+                    _logger.LogWarning($"Idioma NO encontrado: {ObtenerNombreIdioma(idioma)} ({idioma}.traineddata)");
                 }
             }
 
@@ -171,43 +243,43 @@ namespace PresupuestoFamiliarApp.Servicios
         }
 
         /// <summary>
-        /// Obtiene el nombre completo del idioma desde su cÛdigo
+        /// Obtiene el nombre completo del idioma desde su c√≥digo
         /// </summary>
         private string ObtenerNombreIdioma(string codigo)
         {
             return codigo switch
             {
-                "spa" => "EspaÒol",
+                "spa" => "Espa√±ol",
                 "ita" => "Italiano",
-                "eng" => "InglÈs",
+                "eng" => "Ingl√©s",
                 _ => codigo.ToUpper()
             };
         }
 
         /// <summary>
-        /// Extrae informaciÛn estructurada del texto OCR
-        /// Soporta patrones en espaÒol e italiano
+        /// Extrae informaci√≥n estructurada del texto OCR
+        /// Soporta patrones en espa√±ol e italiano
         /// </summary>
         private void ExtraerInformacion(TransaccionOcrResult resultado)
         {
             if (string.IsNullOrWhiteSpace(resultado.TextoCompleto))
             {
-                _logger.LogWarning("?? No hay texto para extraer informaciÛn");
+                _logger.LogWarning("No hay texto para extraer informaci√≥n");
                 return;
             }
 
             var lineas = resultado.TextoCompleto.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            _logger.LogDebug($"?? Analizando {lineas.Length} lÌneas de texto");
+            _logger.LogDebug($"Analizando {lineas.Length} l√≠neas de texto");
 
-            // 1. Extraer MONTO (patrones en espaÒol e italiano)
+            // 1. Extraer MONTO (patrones en espa√±ol e italiano)
             var patronesMonto = new[]
             {
-                // EspaÒol
-                @"(?:total|importe|monto|precio|pagar|pagado|subtotal|neto)[\s:]*[S/$Ä]?\s*(\d+[.,]\d{2})",
+                // Espa√±ol
+                @"(?:total|importe|monto|precio|pagar|pagado|subtotal|neto)[\s:]*[S/$‚Ç¨]?\s*(\d+[.,]\d{2})",
                 // Italiano
-                @"(?:totale|importo|prezzo|pagare|subtotale|netto)[\s:]*[S/$Ä]?\s*(\d+[.,]\d{2})",
-                // GenÈrico
-                @"[S/$Ä]\s*(\d+[.,]\d{2})",
+                @"(?:totale|importo|prezzo|pagare|subtotale|netto)[\s:]*[S/$‚Ç¨]?\s*(\d+[.,]\d{2})",
+                // Gen√©rico
+                @"[S/$‚Ç¨]\s*(\d+[.,]\d{2})",
                 @"(\d+[.,]\d{2})\s*(?:soles|dolares|usd|pen|eur|euro|dollars)",
                 @"\b(\d{1,5}[.,]\d{2})\b"
             };
@@ -221,16 +293,16 @@ namespace PresupuestoFamiliarApp.Servicios
                     if (decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var monto))
                     {
                         resultado.Monto = monto;
-                        _logger.LogDebug($"?? Monto encontrado con patrÛn: {patron} ? {monto}");
+                        _logger.LogDebug($"Monto encontrado con patr√≥n: {patron} ‚Üí {monto}");
                         break;
                     }
                 }
             }
 
-            // 2. Extraer FECHA (formatos espaÒoles e italianos)
+            // 2. Extraer FECHA (formatos espa√±oles e italianos)
             var patronesFecha = new[]
             {
-                @"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", // DD/MM/YYYY (com˙n en ambos)
+                @"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", // DD/MM/YYYY (com√∫n en ambos)
                 @"(\d{4}[/-]\d{1,2}[/-]\d{1,2})", // YYYY-MM-DD
             };
 
@@ -248,7 +320,7 @@ namespace PresupuestoFamiliarApp.Servicios
                         if (DateTime.TryParseExact(fechaStr, formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                         {
                             resultado.Fecha = fecha;
-                            _logger.LogDebug($"?? Fecha encontrada: {fechaStr} ? {fecha:yyyy-MM-dd}");
+                            _logger.LogDebug($"Fecha encontrada: {fechaStr} ‚Üí {fecha:yyyy-MM-dd}");
                             break;
                         }
                     }
@@ -261,7 +333,7 @@ namespace PresupuestoFamiliarApp.Servicios
             if (!resultado.Fecha.HasValue)
             {
                 resultado.Fecha = DateTime.Now;
-                _logger.LogDebug("?? No se encontrÛ fecha en el ticket, usando fecha actual");
+                _logger.LogDebug("No se encontr√≥ fecha en el ticket, usando fecha actual");
             }
 
             // 3. Extraer ESTABLECIMIENTO
@@ -272,7 +344,7 @@ namespace PresupuestoFamiliarApp.Servicios
                 {
                     var lineaLimpia = linea.Trim();
                     
-                    // Palabras a ignorar (espaÒol e italiano)
+                    // Palabras a ignorar (espa√±ol e italiano)
                     var palabrasIgnorar = new[] { 
                         "ticket", "factura", "boleta", "ruc", "fecha", "hora", "nit", "tel", "phone",
                         "scontrino", "fattura", "ricevuta", "data", "ora", "tel", "telefono" 
@@ -284,17 +356,17 @@ namespace PresupuestoFamiliarApp.Servicios
                         && !palabrasIgnorar.Any(p => lineaLimpia.ToLower().Contains(p)))
                     {
                         resultado.Establecimiento = lineaLimpia;
-                        _logger.LogDebug($"?? Establecimiento encontrado: {lineaLimpia}");
+                        _logger.LogDebug($"Establecimiento encontrado: {lineaLimpia}");
                         break;
                     }
                 }
             }
 
-            // 4. Extraer DESCRIPCI”N (palabras clave en espaÒol e italiano)
+            // 4. Extraer DESCRIPCI√ìN (palabras clave en espa√±ol e italiano)
             var conceptos = new List<string>();
             var palabrasClave = new[] { 
-                // EspaÒol
-                "producto", "servicio", "artÌculo", "item", "concepto", "descripciÛn",
+                // Espa√±ol
+                "producto", "servicio", "art√≠culo", "item", "concepto", "descripci√≥n",
                 // Italiano
                 "prodotto", "servizio", "articolo", "voce", "descrizione" 
             };
@@ -315,17 +387,17 @@ namespace PresupuestoFamiliarApp.Servicios
             if (conceptos.Any())
             {
                 resultado.Descripcion = string.Join(", ", conceptos.Take(3));
-                _logger.LogDebug($"?? Conceptos encontrados: {resultado.Descripcion}");
+                _logger.LogDebug($"Conceptos encontrados: {resultado.Descripcion}");
             }
             else if (!string.IsNullOrEmpty(resultado.Establecimiento))
             {
                 resultado.Descripcion = $"Compra en {resultado.Establecimiento}";
-                _logger.LogDebug($"?? DescripciÛn generada desde establecimiento");
+                _logger.LogDebug("Descripci√≥n generada desde establecimiento");
             }
             else
             {
                 resultado.Descripcion = "Compra con ticket";
-                _logger.LogDebug($"?? DescripciÛn por defecto");
+                _logger.LogDebug("Descripci√≥n por defecto");
             }
         }
     }
