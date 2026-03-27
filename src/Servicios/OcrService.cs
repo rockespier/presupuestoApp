@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 using Tesseract;
 using PresupuestoFamiliarApp.Models.DTOs;
 using System.Globalization;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace PresupuestoFamiliarApp.Servicios
 {
@@ -69,8 +71,9 @@ namespace PresupuestoFamiliarApp.Servicios
                     return resultado;
                 }
 
-                // 2. Guardar la imagen
-                var nombreArchivo = $"{Guid.NewGuid()}_{Path.GetFileName(imagen.FileName)}";
+                // 2. Guardar la imagen (nombre saneado para evitar caracteres especiales)
+                var nombreSaneado = Regex.Replace(Path.GetFileName(imagen.FileName), @"[^\w\.\-]", "_");
+                var nombreArchivo = $"{Guid.NewGuid()}_{nombreSaneado}";
                 var rutaCompleta = Path.Combine(_uploadsPath, nombreArchivo);
                 
                 using (var stream = new FileStream(rutaCompleta, FileMode.Create))
@@ -101,24 +104,40 @@ namespace PresupuestoFamiliarApp.Servicios
                 _logger.LogInformation($"Idiomas activos para OCR: {cadenaIdiomas}");
                 resultado.Mensajes.Add($"🌐 Procesando con idiomas: {string.Join(", ", idiomasActivos.Select(ObtenerNombreIdioma))}");
 
-                // 5. Ejecutar OCR con múltiples idiomas
+                // 5. Normalizar imagen (auto-rotar según EXIF, convertir a PNG)
+                // Esto resuelve problemas con fotos de iPhone que tienen metadatos EXIF de orientación
+                // o formatos JPEG progresivos que Leptonica no puede leer correctamente.
+                var rutaNormalizada = await NormalizarImagenAsync(rutaCompleta);
+
+                // 6. Ejecutar OCR con múltiples idiomas
                 _logger.LogInformation("Ejecutando Tesseract OCR...");
-                using (var engine = new TesseractEngine(_tessDataPath, cadenaIdiomas, EngineMode.Default))
+                try
                 {
-                    using (var img = Pix.LoadFromFile(rutaCompleta))
+                    using (var engine = new TesseractEngine(_tessDataPath, cadenaIdiomas, EngineMode.Default))
                     {
-                        using (var page = engine.Process(img))
+                        using (var img = Pix.LoadFromFile(rutaNormalizada))
                         {
-                            resultado.TextoCompleto = page.GetText();
-                            resultado.Confianza = page.GetMeanConfidence() * 100;
-                            
-                            _logger.LogInformation($"OCR completado con confianza: {resultado.Confianza:F1}%");
-                            _logger.LogDebug($"Texto extraído: {resultado.TextoCompleto.Substring(0, Math.Min(100, resultado.TextoCompleto.Length))}...");
+                            using (var page = engine.Process(img))
+                            {
+                                resultado.TextoCompleto = page.GetText();
+                                resultado.Confianza = page.GetMeanConfidence() * 100;
+
+                                _logger.LogInformation($"OCR completado con confianza: {resultado.Confianza:F1}%");
+                                _logger.LogDebug($"Texto extraído: {resultado.TextoCompleto.Substring(0, Math.Min(100, resultado.TextoCompleto.Length))}...");
+                            }
                         }
                     }
                 }
+                finally
+                {
+                    // Limpiar el archivo PNG temporal si es diferente del original
+                    if (rutaNormalizada != rutaCompleta && File.Exists(rutaNormalizada))
+                    {
+                        try { File.Delete(rutaNormalizada); } catch (Exception ex) { _logger.LogDebug(ex, "No se pudo eliminar la imagen normalizada temporal"); }
+                    }
+                }
 
-                // 6. Extraer información específica del texto
+                // 7. Extraer información específica del texto
                 ExtraerInformacion(resultado);
 
                 resultado.ExitosoExtraccion = true;
@@ -146,11 +165,14 @@ namespace PresupuestoFamiliarApp.Servicios
             {
                 _logger.LogError(ex, "Error al procesar imagen con OCR");
                 resultado.ExitosoExtraccion = false;
-                resultado.Mensajes.Add($"❌ Error: {ex.Message}");
-                
-                if (ex.InnerException != null)
+
+                // Mostrar el mensaje de error real (la excepción interna contiene el detalle)
+                var mensajeError = ex.InnerException?.Message ?? ex.Message;
+                resultado.Mensajes.Add($"❌ Error: {mensajeError}");
+
+                if (ex.InnerException?.InnerException != null)
                 {
-                    _logger.LogError($"Detalle: {ex.InnerException.Message}");
+                    _logger.LogError($"Detalle adicional: {ex.InnerException.InnerException.Message}");
                 }
             }
 
@@ -216,6 +238,32 @@ namespace PresupuestoFamiliarApp.Servicios
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Normaliza la imagen para asegurar compatibilidad con Tesseract/Leptonica.
+        /// Aplica la orientación EXIF (crítico para fotos de iPhone) y convierte a PNG.
+        /// Si la normalización falla, devuelve la ruta original para que Tesseract lo intente igualmente.
+        /// </summary>
+        private async Task<string> NormalizarImagenAsync(string rutaOriginal)
+        {
+            try
+            {
+                var rutaPng = Path.Combine(
+                    Path.GetDirectoryName(rutaOriginal) ?? _uploadsPath,
+                    Path.GetFileNameWithoutExtension(rutaOriginal) + "_norm.png");
+                using var image = await Image.LoadAsync(rutaOriginal);
+                // AutoOrient aplica la rotación indicada en los metadatos EXIF (orientación de iPhone)
+                image.Mutate(x => x.AutoOrient());
+                await image.SaveAsPngAsync(rutaPng);
+                _logger.LogInformation("Imagen normalizada a PNG para Tesseract");
+                return rutaPng;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "No se pudo normalizar la imagen; se usará el archivo original");
+                return rutaOriginal;
+            }
         }
 
         /// <summary>
