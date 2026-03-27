@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 🔧 Setup .NET
         uses: actions/setup-dotnet@v5
@@ -37,6 +37,10 @@ jobs:
 
       - name: 🧪 Test with coverage
         run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --verbosity normal
+        env:
+         DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: false
+         LC_ALL: en_US.UTF-8
+         LANG: en_US.UTF-8
 
       - name: 📊 Generate coverage report
         uses: danielpalme/ReportGenerator-GitHub-Action@5.5.1
@@ -46,7 +50,7 @@ jobs:
           reporttypes: 'MarkdownSummaryGithub;Badges'
 
       - name: 📤 Upload coverage report artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: CoverageReport
           path: coveragereport
