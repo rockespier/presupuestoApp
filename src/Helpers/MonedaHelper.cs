@@ -1,4 +1,4 @@
-using PresupuestoFamiliarApp.Models;
+﻿using PresupuestoFamiliarApp.Models;
 namespace PresupuestoFamiliarApp.Helpers
 {
     public static class MonedaHelper
@@ -8,7 +8,7 @@ namespace PresupuestoFamiliarApp.Helpers
             return moneda switch
             {
                 Moneda.Dolares => "$",
-                Moneda.Euros => "�",
+                Moneda.Euros => "\u20AC",   // € como escape Unicode → independiente del encoding del archivo
                 _ => "S/"
             };
         }
