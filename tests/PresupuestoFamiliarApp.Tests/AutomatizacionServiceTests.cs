@@ -71,7 +71,7 @@ namespace PresupuestoFamiliarApp.Test
             // Assert
             var transaccion = await _context.Transacciones.FirstOrDefaultAsync();
             Assert.NotNull(transaccion);
-            Assert.Contains("Autom·tico", transaccion.Descripcion);
+            Assert.Contains("Autom√°tico", transaccion.Descripcion);
             Assert.Equal(100m, transaccion.Monto);
             Assert.Equal(TipoTransaccion.Egreso, transaccion.Tipo);
 
@@ -145,7 +145,7 @@ namespace PresupuestoFamiliarApp.Test
             var deudor = new Deudor
             {
                 Id = 1,
-                Nombre = "Juan PÈrez",
+                Nombre = "Juan P√©rez",
                 Telefono = "123456789"
             };
 
@@ -187,7 +187,7 @@ namespace PresupuestoFamiliarApp.Test
             var deudor = new Deudor
             {
                 Id = 1,
-                Nombre = "MarÌa GarcÌa",
+                Nombre = "Mar√≠a Garc√≠a",
                 Telefono = "987654321"
             };
 
@@ -222,7 +222,7 @@ namespace PresupuestoFamiliarApp.Test
             var deudor = new Deudor
             {
                 Id = 1,
-                Nombre = "Pedro LÛpez",
+                Nombre = "Pedro L√≥pez",
                 Telefono = "555555555"
             };
 
@@ -230,7 +230,7 @@ namespace PresupuestoFamiliarApp.Test
             {
                 Id = 1,
                 DeudorId = deudor.Id,
-                Concepto = "PrÈstamo",
+                Concepto = "Pr√©stamo",
                 MontoTotal = 1000m,
                 MontoPagado = 0m,
                 FechaCreacion = DateTime.Now.AddMonths(-1),
