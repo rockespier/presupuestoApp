@@ -1,0 +1,169 @@
+# .gitlab-ci.yml — GitLab CI/CD Pipeline for PresupuestoFamiliarApp (.NET 9)
+#
+# Stages:
+#   build   → Restore NuGet packages and compile the solution
+#   test    → Run xUnit tests and generate a Cobertura coverage report
+#   publish → Package the app as a tar.gz artifact (main branch + tags)
+#   release → Create a GitLab release with the artifact attached (semver tags only)
+#
+# Pipeline is triggered for:
+#   • Semver version tags (v1.2.3)  — full pipeline including release
+#   • Merge request events          — build + test
+#   • Default branch (main) pushes  — build + test + publish
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/        # semver tag → full pipeline
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" # MR        → build + test
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH      # main      → build + test + publish
+
+# ---------------------------------------------------------------------------
+# Global defaults
+# ---------------------------------------------------------------------------
+variables:
+  CONFIGURATION: "Release"
+  # Store NuGet packages inside the project directory so GitLab can cache them.
+  NUGET_PACKAGES: "$CI_PROJECT_DIR/.nuget/packages"
+  DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "false"
+  LC_ALL: "en_US.UTF-8"
+  LANG: "en_US.UTF-8"
+
+default:
+  image: mcr.microsoft.com/dotnet/sdk:9.0
+  # Cancel redundant pipelines on the same branch when a newer commit arrives.
+  interruptible: true
+  # Share the NuGet package cache across jobs; key is invalidated when any
+  # .csproj file changes so new packages are fetched automatically.
+  cache:
+    key:
+      files:
+        - "**/*.csproj"
+    paths:
+      - .nuget/packages/
+
+stages:
+  - build
+  - test
+  - publish
+  - release
+
+# ---------------------------------------------------------------------------
+# BUILD — Restore packages and compile the entire solution
+# ---------------------------------------------------------------------------
+build:
+  stage: build
+  script:
+    - dotnet restore
+    - dotnet build --no-restore --configuration $CONFIGURATION
+  # Pass compiled binaries to downstream jobs via artifacts so they can use
+  # --no-build and skip recompilation.
+  artifacts:
+    paths:
+      - src/bin/
+      - src/obj/
+      - tests/PresupuestoFamiliarApp.Tests/bin/
+      - tests/PresupuestoFamiliarApp.Tests/obj/
+    expire_in: 2 hours
+
+# ---------------------------------------------------------------------------
+# TEST — Run xUnit tests and publish a Cobertura coverage report
+# ---------------------------------------------------------------------------
+test:
+  stage: test
+  needs: [build]
+  # Only pull from cache; the build job already pushed any new packages.
+  cache:
+    key:
+      files:
+        - "**/*.csproj"
+    paths:
+      - .nuget/packages/
+    policy: pull
+  script:
+    - >-
+      dotnet test
+      --no-build
+      --configuration $CONFIGURATION
+      --collect:"XPlat Code Coverage"
+      --results-directory tests/TestResults
+      --verbosity normal
+    - export PATH="$HOME/.dotnet/tools:$PATH"
+    - dotnet tool install --global dotnet-reportgenerator-globaltool
+    - >-
+      reportgenerator
+      -reports:"tests/TestResults/**/coverage.cobertura.xml"
+      -targetdir:"coveragereport"
+      -reporttypes:"TextSummary;Cobertura"
+    - cat coveragereport/Summary.txt
+  # GitLab parses this regex against job output to display coverage %.
+  coverage: '/Line coverage: (\d+(?:\.\d+)?)%/'
+  artifacts:
+    # Upload artifacts even when tests fail so failures are diagnosable.
+    when: always
+    # Cobertura report enables per-MR diff coverage annotations in GitLab.
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coveragereport/Cobertura.xml
+    paths:
+      - tests/TestResults/
+      - coveragereport/
+    expire_in: 1 week
+
+# ---------------------------------------------------------------------------
+# PUBLISH — Package the application (main branch and version tags only)
+# ---------------------------------------------------------------------------
+publish:
+  stage: publish
+  needs:
+    - job: build
+      artifacts: true   # download compiled binaries for --no-build
+    - job: test
+      artifacts: false  # wait for tests to pass; don't download test artifacts
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  cache:
+    key:
+      files:
+        - "**/*.csproj"
+    paths:
+      - .nuget/packages/
+    policy: pull
+  script:
+    - >-
+      dotnet publish src/PresupuestoFamiliarApp.csproj
+      --configuration $CONFIGURATION
+      --no-build
+      --output ./publish
+    - tar -czf "presupuesto-app-${CI_COMMIT_REF_SLUG}.tar.gz" -C publish .
+  artifacts:
+    name: "presupuesto-app-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - "presupuesto-app-*.tar.gz"
+    expire_in: 1 week
+
+# ---------------------------------------------------------------------------
+# RELEASE — Create a GitLab release with the packaged artifact (tags only)
+# ---------------------------------------------------------------------------
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  # Release jobs should never be cancelled by a newer pipeline.
+  interruptible: false
+  needs:
+    - job: publish
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+/
+  script:
+    - echo "Creating GitLab release for $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: "Release $CI_COMMIT_TAG"
+    description: "Automated release of $CI_PROJECT_NAME version $CI_COMMIT_TAG."
+    assets:
+      links:
+        - name: "presupuesto-app-${CI_COMMIT_REF_SLUG}.tar.gz"
+          url: "$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_REF_NAME/raw/presupuesto-app-${CI_COMMIT_REF_SLUG}.tar.gz?job=publish"
+          link_type: package
