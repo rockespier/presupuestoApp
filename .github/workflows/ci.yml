@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 🔧 Setup .NET
         uses: actions/setup-dotnet@v5
@@ -46,7 +46,7 @@ jobs:
           reporttypes: 'MarkdownSummaryGithub;Badges'
 
       - name: 📤 Upload coverage report artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: CoverageReport
           path: coveragereport
