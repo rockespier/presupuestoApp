@@ -6,7 +6,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
         <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">?? Probar OCR Multiidioma</h2>
         <p class="text-slate-600 dark:text-slate-400 mb-6">
-            Procesa tickets en espaÒol ???? o italiano ???? autom·ticamente
+            Procesa tickets en espaÔøΩol ???? o italiano ???? automÔøΩticamente
         </p>
 
         @if (TempData["Error"] != null)
@@ -24,10 +24,10 @@
                 <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">?? Instrucciones:</h3>
                 <ol class="list-decimal list-inside text-sm text-blue-800 dark:text-blue-200 space-y-1">
                     <li>Selecciona una imagen de un ticket o factura</li>
-                    <li>Puede estar en espaÒol ???? o italiano ????</li>
-                    <li>Aseg˙rate de que el texto sea legible</li>
+                    <li>Puede estar en espaÔøΩol ???? o italiano ????</li>
+                    <li>AsegÔøΩrate de que el texto sea legible</li>
                     <li>Haz clic en "Procesar con OCR"</li>
-                    <li>Revisa los datos extraÌdos</li>
+                    <li>Revisa los datos extraÔøΩdos</li>
                 </ol>
             </div>
 
@@ -37,14 +37,17 @@
                     ?? Seleccionar Imagen del Ticket
                 </label>
                 <input type="file" 
+                       id="imagenInput"
                        name="imagen" 
-                       accept="image/*" 
-                       capture="environment"
+                       accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100" 
                        required />
                 <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                    ?? Formatos aceptados: JPG, PNG, JPEG, WebP
+                    üì∑ Formatos aceptados: JPG, PNG, WebP ‚Äî desde c√°mara o galer√≠a
                 </p>
+                <div id="formatError" class="hidden mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-300 rounded-lg text-xs text-red-700 dark:text-red-400">
+                    ‚ö†Ô∏è Formato no compatible. Por favor convierte la imagen a JPG o PNG antes de subirla.
+                </div>
             </div>
 
             <!-- Vista Previa (Opcional) -->
@@ -57,7 +60,7 @@
                      alt="Vista previa" />
             </div>
 
-            <!-- BotÛn de EnvÌo -->
+            <!-- BotÔøΩn de EnvÔøΩo -->
             <button type="submit" 
                     class="w-full py-3.5 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-blue-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
                 ?? Procesar con OCR
@@ -72,25 +75,25 @@
             </div>
         </form>
 
-        <!-- InformaciÛn TÈcnica -->
+        <!-- InformaciÔøΩn TÔøΩcnica -->
         <div class="mt-8 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-            <h4 class="font-semibold text-slate-800 dark:text-slate-200 mb-2">?? InformaciÛn TÈcnica</h4>
+            <h4 class="font-semibold text-slate-800 dark:text-slate-200 mb-2">?? InformaciÔøΩn TÔøΩcnica</h4>
             <ul class="text-xs text-slate-600 dark:text-slate-400 space-y-1">
                 <li>? Motor OCR: Tesseract 5.2.0</li>
-                <li>? Idiomas: EspaÒol + Italiano (auto-detecta)</li>
+                <li>? Idiomas: EspaÔøΩol + Italiano (auto-detecta)</li>
                 <li>? Endpoint: POST /Transacciones/TestOcr</li>
-                <li>? RedirecciÛn: /Transacciones/CreateFromImage</li>
+                <li>? RedirecciÔøΩn: /Transacciones/CreateFromImage</li>
             </ul>
         </div>
 
-        <!-- GuÌa de Idiomas -->
+        <!-- GuÔøΩa de Idiomas -->
         <div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-700">
             <h4 class="font-semibold text-green-800 dark:text-green-200 mb-3">?? Soporte Multiidioma</h4>
             <div class="space-y-3 text-xs text-green-700 dark:text-green-300">
                 <div class="flex items-start gap-2">
                     <span class="text-lg">????</span>
                     <div>
-                        <strong>EspaÒol:</strong> Detecta "Total", "Importe", "Precio", "Fecha", etc.
+                        <strong>EspaÔøΩol:</strong> Detecta "Total", "Importe", "Precio", "Fecha", etc.
                     </div>
                 </div>
                 <div class="flex items-start gap-2">
@@ -101,13 +104,13 @@
                 </div>
                 <div class="bg-white dark:bg-slate-800 rounded p-2 mt-2">
                     <p class="text-amber-700 dark:text-amber-300">
-                        ?? <strong>Tip:</strong> El sistema usa ambos idiomas simult·neamente para mejor precisiÛn
+                        ?? <strong>Tip:</strong> El sistema usa ambos idiomas simultÔøΩneamente para mejor precisiÔøΩn
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- GuÌa de Plataformas -->
+        <!-- GuÔøΩa de Plataformas -->
         <div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
             <h4 class="font-semibold text-amber-800 dark:text-amber-200 mb-2">?? Compatibilidad</h4>
             <div class="text-xs text-amber-700 dark:text-amber-300 space-y-2">
@@ -127,19 +130,36 @@
 
 @section Scripts {
     <script>
-        // Vista previa de la imagen seleccionada
-        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+
+        document.getElementById('imagenInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const preview = document.getElementById('preview');
-                    const previewImage = document.getElementById('previewImage');
-                    previewImage.src = event.target.result;
-                    preview.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
+            const formatError = document.getElementById('formatError');
+            const preview = document.getElementById('preview');
+            const previewImage = document.getElementById('previewImage');
+
+            formatError.classList.add('hidden');
+            preview.classList.add('hidden');
+
+            if (!file) return;
+
+            // Validate format client-side (catches HEIC and other unsupported types)
+            if (!allowedTypes.includes(file.type.toLowerCase())) {
+                formatError.classList.remove('hidden');
+                this.value = '';
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                previewImage.src = event.target.result;
+                preview.classList.remove('hidden');
+            };
+            reader.onerror = function() {
+                // If FileReader fails, still allow the upload but hide preview
+                preview.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
         });
     </script>
 }
