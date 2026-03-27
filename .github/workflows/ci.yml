@@ -36,7 +36,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: 🧪 Test with coverage
-        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --verbosity normal
+        run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory tests/TestResults --verbosity normal
         env:
          DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: false
          LC_ALL: en_US.UTF-8
