@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -33,8 +33,12 @@ jobs:
 
       - name: 📁 Create release artifact
         run: |
-          cd src/bin/Release/net9.0/
-          zip -r ../../../../tour-of-heroes-api.zip .
+          dotnet publish src/PresupuestoFamiliarApp.csproj \
+            --configuration Release \
+            --no-build \
+            --output ./publish
+          cd publish
+          zip -r ../presupuesto-app.zip .
         
       - name: 📝 Build changelog
         id: build_changelog
@@ -51,6 +55,6 @@ jobs:
           body: ${{ steps.build_changelog.outputs.changelog }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
-          files: tour-of-heroes-api.zip
+          files: presupuesto-app.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
