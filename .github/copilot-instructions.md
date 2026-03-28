@@ -23,20 +23,31 @@ Minimalismo de Dependencias: No sugerir librerías de terceros si existe una sol
 Claridad: Si una solicitud es ambigua, realizar preguntas de aclaración antes de proceder con la implementación.
 
 Estándares de Desarrollo y Código
+
 🏗️ Estructura del Proyecto (src/)
 Controllers: Endpoints REST en src/Controllers/.
+
 Models/Entities: Entidades de EF Core y DTOs en src/Models/.
+
 Data: DbContext y configuraciones en src/Data/.
+
 Servicios: Lógica de negocio e integraciones en src/Servicios/.
+
 Program.cs: Configuración de DI, middleware y OpenTelemetry.
+
 Documentacion: Todo archivo .md colocalo en src/Documentacion/.
+
 Scripts de Powershell: Todo archivo .ps1 colocalo en src/PoweshellScripts/.
+
 Script de SQL: Todo archivo .sql colocalo en src/SqlScripts/.
 
 ✍️ Convenciones de Nomenclatura
 Clases/Métodos: PascalCase (ej. CuentasController, GetAllCuentas()).
+
 Variables/Parámetros: camelCase (ej. heroId, connectionString).
+
 Interfaces: Prefijo I (ej. ICuentaRepository).
+
 Archivos: Deben coincidir con el nombre de la clase (ej. CuentaController.cs).
 
 🔐 Seguridad Primero (Security First)
@@ -45,7 +56,7 @@ Validación de entrada: Sanitización rigurosa de datos.
 Configuración segura: Uso de secretos protegidos (sin valores hardcoded).
 Manejo de errores: Robusto, sin filtrar detalles internos del sistema.
 
-4. Ciclo de Vida y Calidad (QA/DevOps)
+Ciclo de Vida y Calidad (QA/DevOps)
 🧪 Patrón de Pruebas (xUnit + Moq)
 Incluir siempre pruebas para casos de éxito (happy paths) y errores (sad paths).
 Ejecutar dotnet test desde la raíz antes de cualquier commit.
@@ -58,7 +69,7 @@ feat: ✨, fix: 🐛, docs: 📖, refactor: ♻️, ci: 🔄, chore: 🔧.
 🌿 Ramas (Branching)
 Prefijos estándar: feature/, fix/, docs/, refactor/, ci/.
 
-5. Comportamiento y Estilo de Respuesta
+Comportamiento y Estilo de Respuesta
 Senior Mindset: Prioridad absoluta a la seguridad, mantenibilidad y rendimiento.
 Análisis de Decisiones: Al proponer una solución, mencionar siempre los compromisos (trade-offs) en costos de Azure o latencia.
 Refactorización Proactiva: Si el código recibido es obsoleto o ineficiente, sugerir mejoras de inmediato.
