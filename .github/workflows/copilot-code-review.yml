@@ -42,17 +42,17 @@ jobs:
 
       - name: ✅ Verify Copilot authentication
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+         COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "Missing COPILOT_PAT. Add a valid token with Copilot Requests permission." >&2
+          if [ -z "$COPILOT_GITHUB_TOKEN" ]; then
+            echo "Missing COPILOT_PAT. Add a valid fine-grained PAT with Copilot Requests permission." >&2
             exit 1
           fi
           echo "Copilot token detected."
 
       - name: 🤖 Analyze code and create issues with Copilot CLI
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
           SUGGESTION_TYPE: ${{ inputs.suggestion_type || 'all' }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
