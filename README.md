@@ -11,6 +11,7 @@
 | 📊 **Dashboard** | Resumen mensual de ingresos, egresos y ahorro proyectado con gráficos interactivos |
 | 🏦 **Cuentas** | Gestiona cuentas bancarias, efectivo y tarjetas de crédito en distintas monedas |
 | 💸 **Transacciones** | Registra y categoriza ingresos y egresos con soporte multi-moneda y tipo de cambio |
+| 🖼️ **Reconocimiento de Imágenes** | Analiza comprobantes y recibos automáticamente mediante Azure Computer Vision |
 | 🔄 **Transferencias** | Mueve dinero entre tus cuentas fácilmente |
 | 📋 **Presupuestos** | Define presupuestos mensuales por categoría y controla el cumplimiento |
 | 🔁 **Movimientos Fijos** | Automatiza el registro de ingresos y gastos recurrentes |
