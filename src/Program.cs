@@ -111,5 +111,5 @@ using (var scope = app.Services.CreateScope())
     RecurringJob.AddOrUpdate("NotificarVencimientos", () => pushService.NotificarVencimientosProximos(), "0 9 * * *");
     RecurringJob.AddOrUpdate("NotificarPresupuestos", () => pushService.NotificarPresupuestosExcedidos(), "0 20 * * *");
 }
-
+//Solo debe existir un app.Run() en toda la aplicación.
 app.Run();
