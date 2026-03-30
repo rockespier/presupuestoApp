@@ -1,0 +1,89 @@
+name: ⚙️ Auto Tag Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine next version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1)"
+
+          if [ -z "${latest_tag}" ]; then
+            next_tag="v1.0.0"
+            echo "next_tag=${next_tag}" >> "$GITHUB_OUTPUT"
+            echo "version_type=major" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          base="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "${base}"
+
+          # Default bump is PATCH
+          version_type="patch"
+
+          # Inspect commit messages in this push to infer version bump
+          commit_messages="$(git log --format=%s ${{ github.event.before }}..${{ github.sha }})"
+
+          if echo "$commit_messages" | grep -Eiq '(breaking change|breaking-change|!:)'; then
+            version_type="major"
+          elif echo "$commit_messages" | grep -Eiq '(feature|enhancement|\bfeat\b)'; then
+            version_type="minor"
+          fi
+
+          case "$version_type" in
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            patch)
+              patch=$((patch + 1))
+              ;;
+          esac
+
+          next_tag="v${major}.${minor}.${patch}"
+
+          echo "next_tag=${next_tag}" >> "$GITHUB_OUTPUT"
+          echo "version_type=${version_type}" >> "$GITHUB_OUTPUT"
+          echo "Next tag: ${next_tag}"
+
+      - name: Ensure tag does not already exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-remote --tags origin "refs/tags/${{ steps.version.outputs.next_tag }}" | grep -q "${{ steps.version.outputs.next_tag }}"; then
+            echo "Tag already exists: ${{ steps.version.outputs.next_tag }}"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.next_tag }}"
+          git push origin "${{ steps.version.outputs.next_tag }}"
