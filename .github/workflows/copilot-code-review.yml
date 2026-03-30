@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 📦 Install GitHub Copilot CLI
         run: |
@@ -42,20 +42,21 @@ jobs:
 
       - name: ✅ Verify Copilot authentication
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "Missing GitHub token. Add COPILOT_PAT or ensure GITHUB_TOKEN is available." >&2
+            echo "Missing COPILOT_PAT. Add a valid token with Copilot Requests permission." >&2
             exit 1
           fi
-          echo "GitHub token detected."
+          echo "Copilot token detected."
 
       - name: 🤖 Analyze code and create issues with Copilot CLI
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_PAT || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
           SUGGESTION_TYPE: ${{ inputs.suggestion_type || 'all' }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          copilot -p "..." --allow-all-tools
 
           # Build the prompt based on suggestion type
           if [ "$SUGGESTION_TYPE" = "all" ]; then
