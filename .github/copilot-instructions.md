@@ -42,7 +42,7 @@ Prioriza soluciones **cloud-native**, escalables, mantenibles y de alto rendimie
 - **Variables y parámetros**: `camelCase`
 - **Interfaces**: prefijo `I`
 - **Archivos**: deben coincidir con el nombre de la clase
-
+- **Iconos**: en todas las vistas eliminar completamente los emojis y usar iconos SVG inline de Heroicons en su lugar, que son más compatibles
 # Seguridad primero
 
 Toda recomendación o código debe incluir:

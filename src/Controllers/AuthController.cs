@@ -24,10 +24,13 @@ namespace PresupuestoFamiliarApp.Controllers
         }
 
         // GET: Mostrar pantalla de Login
-        public IActionResult Login()
+        public async Task<IActionResult> Login()
         {
-            // Si ya está logueado, lo mandamos al inicio
-            if (User.Identity.IsAuthenticated) return RedirectToAction("Index", "Home");
+            // If already logged in, sign out first to allow re-login
+            if (User.Identity.IsAuthenticated)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
             return View();
         }
 
@@ -36,6 +39,9 @@ namespace PresupuestoFamiliarApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string nombreUsuario, string password)
         {
+            // IMPORTANT: Sign out any existing session first to prevent session conflicts
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            
             // CAMBIO: Buscar por email O nombre de usuario
             var usuario = await _context.Usuarios
                 .Include(u => u.Espacios)

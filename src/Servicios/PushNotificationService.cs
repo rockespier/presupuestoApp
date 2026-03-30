@@ -224,9 +224,9 @@ namespace PresupuestoFamiliarApp.Servicios
                 var deudasProximas = await _context.CuentasPorCobrar
                     .Include(c => c.Deudor)
                     .Where(c => espaciosUsuario.Contains(c.Deudor.EspacioId)
-                        && !c.EstaPagado
-                        && c.FechaVencimiento <= fechaLimite
-                        && c.FechaVencimiento >= hoy)
+                    && (c.MontoTotal - c.MontoPagado) > 0
+                    && c.FechaVencimiento <= fechaLimite
+                    && c.FechaVencimiento >= hoy)
                     .ToListAsync();
 
                 Console.WriteLine($"   💰 Deudas próximas encontradas: {deudasProximas.Count}");
@@ -312,6 +312,7 @@ namespace PresupuestoFamiliarApp.Servicios
                     // Notificar si se excedió el 90% del presupuesto
                     if (gastosMes >= categoria.PresupuestoMensual * 0.9m)
                     {
+                        if (categoria.PresupuestoMensual == 0) continue;
                         var porcentaje = (int)(gastosMes / categoria.PresupuestoMensual * 100);
                         var mensaje = porcentaje >= 100
                             ? $"Has excedido el presupuesto de {categoria.Nombre} en un {porcentaje}%"

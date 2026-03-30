@@ -13,11 +13,11 @@ namespace PresupuestoFamiliarApp.Controllers
     [Authorize]
     public class TransaccionesController : BaseController
     {
-        private readonly OcrService _ocrService;
+        private readonly AzureOcrService _azureOcrService;
 
-        public TransaccionesController(PresupuestoContext context, OcrService ocrService) : base(context)
+        public TransaccionesController(PresupuestoContext context, AzureOcrService azureOcrService) : base(context)
         {
-            _ocrService = ocrService;
+            _azureOcrService = azureOcrService;
         }
 
         
@@ -624,7 +624,7 @@ namespace PresupuestoFamiliarApp.Controllers
             // Si viene una imagen, procesarla con OCR
             if (imagen != null && imagen.Length > 0)
             {
-                var resultadoOcr = await _ocrService.ProcesarTicket(imagen);
+                var resultadoOcr = await _azureOcrService.ProcesarTicket(imagen);
                 
                 // Redirigir a la vista de creación con los datos extraídos
                 return RedirectToAction(nameof(CreateFromImage), new { 
@@ -720,7 +720,7 @@ namespace PresupuestoFamiliarApp.Controllers
 
             try
             {
-                var resultado = await _ocrService.ProcesarTicket(imagen);
+                var resultado = await _azureOcrService.ProcesarTicket(imagen);
                 
                 // Redirigir a la vista de creación con los datos extraídos
                 return RedirectToAction(nameof(CreateFromImage), new { 
