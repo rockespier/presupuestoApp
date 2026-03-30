@@ -4,6 +4,7 @@ using PresupuestoFamiliarApp.Models.DTOs;
 using System.Globalization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace PresupuestoFamiliarApp.Servicios
 {
@@ -82,7 +83,10 @@ namespace PresupuestoFamiliarApp.Servicios
                 }
                 
                 resultado.RutaImagen = $"/uploads/tickets/{nombreArchivo}";
-                _logger.LogInformation($"Imagen guardada en: {resultado.RutaImagen}");
+                _logger.LogInformation($"? Imagen guardada en: {resultado.RutaImagen}");
+
+                // 2. Preprocesar imagen para mejorar OCR
+                var rutaProcesada = await PreprocesarImagen(rutaCompleta);
 
                 // 3. Detectar qué idiomas están disponibles
                 var idiomasActivos = DetectarIdiomasDisponibles();
@@ -104,37 +108,31 @@ namespace PresupuestoFamiliarApp.Servicios
                 _logger.LogInformation($"Idiomas activos para OCR: {cadenaIdiomas}");
                 resultado.Mensajes.Add($"🌐 Procesando con idiomas: {string.Join(", ", idiomasActivos.Select(ObtenerNombreIdioma))}");
 
-                // 5. Normalizar imagen (auto-rotar según EXIF, convertir a PNG)
-                // Esto resuelve problemas con fotos de iPhone que tienen metadatos EXIF de orientación
-                // o formatos JPEG progresivos que Leptonica no puede leer correctamente.
-                var rutaNormalizada = await NormalizarImagenAsync(rutaCompleta);
-
-                // 6. Ejecutar OCR con múltiples idiomas
-                _logger.LogInformation("Ejecutando Tesseract OCR...");
-                try
+                // 5. Ejecutar OCR con múltiples idiomas y configuraciones mejoradas
+                _logger.LogInformation("?? Ejecutando Tesseract OCR...");
+                using (var engine = new TesseractEngine(_tessDataPath, cadenaIdiomas, EngineMode.Default))
                 {
-                    using (var engine = new TesseractEngine(_tessDataPath, cadenaIdiomas, EngineMode.Default))
+                    // Configuraciones para mejorar precisión
+                    engine.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.,/-:€$£ áéíóúÁÉÍÓÚñÑàèìòùÀÈÌÒÙ");
+                    engine.SetVariable("preserve_interword_spaces", "1");
+                    
+                    using (var img = Pix.LoadFromFile(rutaProcesada))
                     {
-                        using (var img = Pix.LoadFromFile(rutaNormalizada))
+                        using (var page = engine.Process(img, PageSegMode.Auto))
                         {
-                            using (var page = engine.Process(img))
-                            {
-                                resultado.TextoCompleto = page.GetText();
-                                resultado.Confianza = page.GetMeanConfidence() * 100;
-
-                                _logger.LogInformation($"OCR completado con confianza: {resultado.Confianza:F1}%");
-                                _logger.LogDebug($"Texto extraído: {resultado.TextoCompleto.Substring(0, Math.Min(100, resultado.TextoCompleto.Length))}...");
-                            }
+                            resultado.TextoCompleto = page.GetText();
+                            resultado.Confianza = page.GetMeanConfidence() * 100;
+                            
+                            _logger.LogInformation($"? OCR completado con confianza: {resultado.Confianza:F1}%");
+                            _logger.LogDebug($"?? Texto extraído:\n{resultado.TextoCompleto}");
                         }
                     }
                 }
-                finally
+
+                // 6. Limpiar imagen procesada temporal
+                if (rutaProcesada != rutaCompleta && File.Exists(rutaProcesada))
                 {
-                    // Limpiar el archivo PNG temporal si es diferente del original
-                    if (rutaNormalizada != rutaCompleta && File.Exists(rutaNormalizada))
-                    {
-                        try { File.Delete(rutaNormalizada); } catch (Exception ex) { _logger.LogDebug(ex, "No se pudo eliminar la imagen normalizada temporal"); }
-                    }
+                    File.Delete(rutaProcesada);
                 }
 
                 // 7. Extraer información específica del texto
@@ -241,27 +239,43 @@ namespace PresupuestoFamiliarApp.Servicios
         }
 
         /// <summary>
-        /// Normaliza la imagen para asegurar compatibilidad con Tesseract/Leptonica.
-        /// Aplica la orientación EXIF (crítico para fotos de iPhone) y convierte a PNG.
-        /// Si la normalización falla, devuelve la ruta original para que Tesseract lo intente igualmente.
+        /// Preprocesa la imagen para mejorar la calidad del OCR
         /// </summary>
-        private async Task<string> NormalizarImagenAsync(string rutaOriginal)
+        private async Task<string> PreprocesarImagen(string rutaOriginal)
         {
             try
             {
-                var rutaPng = Path.Combine(
-                    Path.GetDirectoryName(rutaOriginal) ?? _uploadsPath,
-                    Path.GetFileNameWithoutExtension(rutaOriginal) + "_norm.png");
-                using var image = await Image.LoadAsync(rutaOriginal);
-                // AutoOrient aplica la rotación indicada en los metadatos EXIF (orientación de iPhone)
-                image.Mutate(x => x.AutoOrient());
-                await image.SaveAsPngAsync(rutaPng);
-                _logger.LogInformation("Imagen normalizada a PNG para Tesseract");
-                return rutaPng;
+                var rutaProcesada = rutaOriginal.Replace(Path.GetExtension(rutaOriginal), "_processed.png");
+                
+                _logger.LogInformation("?? Preprocesando imagen para mejorar OCR...");
+                
+                using (var image = await Image.LoadAsync<Rgba32>(rutaOriginal))
+                {
+                    // Aplicar mejoras a la imagen
+                    image.Mutate(x => x
+                        .Grayscale()                          // Convertir a escala de grises
+                        .GaussianSharpen(1.5f)               // Mejorar nitidez
+                        .Contrast(1.2f)                       // Aumentar contraste
+                        .BinaryThreshold(0.5f)                // Binarización para mejor contraste
+                    );
+                    
+                    // Escalar si es muy pequeña (mínimo 1000px de ancho)
+                    if (image.Width < 1000)
+                    {
+                        var escala = 1000f / image.Width;
+                        image.Mutate(x => x.Resize((int)(image.Width * escala), (int)(image.Height * escala)));
+                        _logger.LogDebug($"?? Imagen escalada a: {image.Width}x{image.Height}");
+                    }
+                    
+                    await image.SaveAsPngAsync(rutaProcesada);
+                }
+                
+                _logger.LogInformation("? Imagen preprocesada correctamente");
+                return rutaProcesada;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "No se pudo normalizar la imagen; se usará el archivo original");
+                _logger.LogWarning($"?? No se pudo preprocesar imagen: {ex.Message}. Usando original.");
                 return rutaOriginal;
             }
         }
@@ -316,137 +330,215 @@ namespace PresupuestoFamiliarApp.Servicios
                 return;
             }
 
-            var lineas = resultado.TextoCompleto.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            _logger.LogDebug($"Analizando {lineas.Length} líneas de texto");
+            var texto = resultado.TextoCompleto;
+            var lineas = texto.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(l => l.Trim())
+                .Where(l => !string.IsNullOrWhiteSpace(l))
+                .ToArray();
+            
+            _logger.LogDebug($"?? Analizando {lineas.Length} líneas de texto");
 
-            // 1. Extraer MONTO (patrones en español e italiano)
-            var patronesMonto = new[]
-            {
-                // Español
-                @"(?:total|importe|monto|precio|pagar|pagado|subtotal|neto)[\s:]*[S/$€]?\s*(\d+[.,]\d{2})",
-                // Italiano
-                @"(?:totale|importo|prezzo|pagare|subtotale|netto)[\s:]*[S/$€]?\s*(\d+[.,]\d{2})",
-                // Genérico
-                @"[S/$€]\s*(\d+[.,]\d{2})",
-                @"(\d+[.,]\d{2})\s*(?:soles|dolares|usd|pen|eur|euro|dollars)",
-                @"\b(\d{1,5}[.,]\d{2})\b"
-            };
+            // 1. Extraer ESTABLECIMIENTO (primeras líneas significativas)
+            ExtraerEstablecimiento(lineas, resultado);
 
-            foreach (var patron in patronesMonto)
+            // 2. Extraer FECHA (patrones mejorados)
+            ExtraerFecha(texto, resultado);
+
+            // 3. Extraer MONTO (patrones mejorados con contexto)
+            ExtraerMonto(texto, lineas, resultado);
+
+            // 4. Extraer DESCRIPCIÓN
+            GenerarDescripcion(lineas, resultado);
+        }
+
+        /// <summary>
+        /// Extrae el nombre del establecimiento de las primeras líneas
+        /// </summary>
+        private void ExtraerEstablecimiento(string[] lineas, TransaccionOcrResult resultado)
+        {
+            // Buscar en las primeras 10 líneas
+            var candidatos = new List<string>();
+            
+            for (int i = 0; i < Math.Min(10, lineas.Length); i++)
             {
-                var match = Regex.Match(resultado.TextoCompleto, patron, RegexOptions.IgnoreCase);
-                if (match.Success)
+                var linea = lineas[i];
+                
+                // Palabras a ignorar (español e italiano)
+                var palabrasIgnorar = new[] { 
+                    "ticket", "factura", "boleta", "ruc", "fecha", "hora", "nit", "tel", "phone", "fax",
+                    "scontrino", "fattura", "ricevuta", "data", "ora", "telefono", "partita", "iva",
+                    "cod", "p.iva", "reg", "via", "piazza", "corso"
+                };
+                
+                var lineaLower = linea.ToLower();
+                
+                // Filtrar líneas que son solo números, fechas o tienen palabras a ignorar
+                if (linea.Length >= 5 
+                    && linea.Length <= 60 
+                    && !Regex.IsMatch(linea, @"^\d+$")
+                    && !Regex.IsMatch(linea, @"\d{2}[/-]\d{2}[/-]\d{2,4}")
+                    && !palabrasIgnorar.Any(p => lineaLower.Contains(p))
+                    && Regex.IsMatch(linea, @"[a-zA-Z]{3,}")) // Al menos 3 letras consecutivas
                 {
-                    var montoStr = match.Groups[1].Value.Replace(",", ".");
-                    if (decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var monto))
-                    {
-                        resultado.Monto = monto;
-                        _logger.LogDebug($"Monto encontrado con patrón: {patron} → {monto}");
-                        break;
-                    }
+                    candidatos.Add(linea);
                 }
             }
+            
+            if (candidatos.Any())
+            {
+                // Preferir líneas con mayúsculas (típico de nombres de establecimientos)
+                var mejorCandidato = candidatos
+                    .OrderByDescending(c => c.Count(char.IsUpper))
+                    .ThenByDescending(c => c.Length)
+                    .First();
+                
+                resultado.Establecimiento = mejorCandidato;
+                _logger.LogDebug($"?? Establecimiento encontrado: {mejorCandidato}");
+            }
+        }
 
-            // 2. Extraer FECHA (formatos españoles e italianos)
+        /// <summary>
+        /// Extrae la fecha del texto con patrones mejorados
+        /// </summary>
+        private void ExtraerFecha(string texto, TransaccionOcrResult resultado)
+        {
+            // Patrones de fecha más específicos
             var patronesFecha = new[]
             {
-                @"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", // DD/MM/YYYY (común en ambos)
-                @"(\d{4}[/-]\d{1,2}[/-]\d{1,2})", // YYYY-MM-DD
+                // DD/MM/YYYY o DD-MM-YYYY (con variantes)
+                @"(?:data|fecha|date)[\s:]*(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4})",
+                @"\b(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{4})\b",
+                @"\b(\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2})\b",
+                // YYYY-MM-DD
+                @"\b(\d{4}[-/\.]\d{1,2}[-/\.]\d{1,2})\b"
             };
 
             foreach (var patron in patronesFecha)
             {
-                var match = Regex.Match(resultado.TextoCompleto, patron);
+                var match = Regex.Match(texto, patron, RegexOptions.IgnoreCase);
                 if (match.Success)
                 {
                     var fechaStr = match.Groups[1].Value;
                     
-                    var formatos = new[] { "dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yy", "dd-MM-yy", "yyyy-MM-dd", "yyyy/MM/dd" };
+                    // Normalizar separadores
+                    fechaStr = fechaStr.Replace('.', '/').Replace('-', '/');
+                    
+                    var formatos = new[] 
+                    { 
+                        "dd/MM/yyyy", "dd/MM/yy", 
+                        "yyyy/MM/dd", 
+                        "d/M/yyyy", "d/M/yy" 
+                    };
                     
                     foreach (var formato in formatos)
                     {
                         if (DateTime.TryParseExact(fechaStr, formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fecha))
                         {
-                            resultado.Fecha = fecha;
-                            _logger.LogDebug($"Fecha encontrada: {fechaStr} → {fecha:yyyy-MM-dd}");
-                            break;
+                            // Validar que la fecha sea razonable (no futura, no muy antigua)
+                            if (fecha <= DateTime.Now && fecha >= DateTime.Now.AddYears(-5))
+                            {
+                                resultado.Fecha = fecha;
+                                _logger.LogDebug($"?? Fecha encontrada: {fechaStr} ? {fecha:yyyy-MM-dd}");
+                                return;
+                            }
                         }
                     }
-                    
-                    if (resultado.Fecha.HasValue)
-                        break;
                 }
             }
 
-            if (!resultado.Fecha.HasValue)
-            {
-                resultado.Fecha = DateTime.Now;
-                _logger.LogDebug("No se encontró fecha en el ticket, usando fecha actual");
-            }
+            // Si no se encontró fecha válida, usar fecha actual
+            resultado.Fecha = DateTime.Now;
+            _logger.LogDebug("?? No se encontró fecha en el ticket, usando fecha actual");
+        }
 
-            // 3. Extraer ESTABLECIMIENTO
-            if (lineas.Length > 0)
-            {
-                var primerasLineas = lineas.Take(5).ToList();
-                foreach (var linea in primerasLineas)
-                {
-                    var lineaLimpia = linea.Trim();
-                    
-                    // Palabras a ignorar (español e italiano)
-                    var palabrasIgnorar = new[] { 
-                        "ticket", "factura", "boleta", "ruc", "fecha", "hora", "nit", "tel", "phone",
-                        "scontrino", "fattura", "ricevuta", "data", "ora", "tel", "telefono" 
-                    };
-                    
-                    if (lineaLimpia.Length >= 3 
-                        && lineaLimpia.Length <= 50 
-                        && !Regex.IsMatch(lineaLimpia, @"^\d+$")
-                        && !palabrasIgnorar.Any(p => lineaLimpia.ToLower().Contains(p)))
-                    {
-                        resultado.Establecimiento = lineaLimpia;
-                        _logger.LogDebug($"Establecimiento encontrado: {lineaLimpia}");
-                        break;
-                    }
-                }
-            }
-
-            // 4. Extraer DESCRIPCIÓN (palabras clave en español e italiano)
-            var conceptos = new List<string>();
-            var palabrasClave = new[] { 
-                // Español
-                "producto", "servicio", "artículo", "item", "concepto", "descripción",
-                // Italiano
-                "prodotto", "servizio", "articolo", "voce", "descrizione" 
-            };
+        /// <summary>
+        /// Extrae el monto del ticket con patrones mejorados
+        /// </summary>
+        private void ExtraerMonto(string texto, string[] lineas, TransaccionOcrResult resultado)
+        {
+            var montosEncontrados = new List<(decimal monto, int prioridad, string contexto)>();
             
-            foreach (var linea in lineas)
+            // Patrones de monto con contexto (español e italiano)
+            var patronesConContexto = new[]
             {
-                var lineaLower = linea.ToLower();
-                if (palabrasClave.Any(p => lineaLower.Contains(p)))
+                // Palabras clave de total
+                (@"(?:total|totale|importe|importo|pagar|pagare|a\s+pagar|da\s+pagare)[\s:€$]*(\d{1,6}[.,]\d{2})", 10),
+                (@"(?:tot|ttl|sum|suma)[\s:€$]*(\d{1,6}[.,]\d{2})", 9),
+                (@"(?:neto|netto|subtotal)[\s:€$]*(\d{1,6}[.,]\d{2})", 8),
+                // Formato con símbolo de moneda
+                (@"[€$£]\s*(\d{1,6}[.,]\d{2})", 7),
+                (@"(\d{1,6}[.,]\d{2})\s*[€$£]", 7),
+                // Montos al final de línea (típico de totales)
+                (@"^\s*(\d{1,6}[.,]\d{2})\s*$", 6),
+                // Formato genérico
+                (@"\b(\d{1,6}[.,]\d{2})\b", 3)
+            };
+
+            foreach (var (patron, prioridad) in patronesConContexto)
+            {
+                var matches = Regex.Matches(texto, patron, RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                foreach (Match match in matches)
                 {
-                    var concepto = linea.Trim();
-                    if (concepto.Length > 3 && concepto.Length < 100)
+                    var montoStr = match.Groups[1].Value.Replace(",", ".");
+                    if (decimal.TryParse(montoStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var monto))
                     {
-                        conceptos.Add(concepto);
+                        // Filtrar montos muy pequeños o muy grandes (probablemente errores)
+                        if (monto >= 0.01m && monto <= 999999.99m)
+                        {
+                            montosEncontrados.Add((monto, prioridad, match.Value));
+                            _logger.LogDebug($"?? Monto candidato: {monto:F2} (prioridad: {prioridad}, contexto: '{match.Value.Trim()}')");
+                        }
                     }
                 }
             }
 
-            if (conceptos.Any())
+            // Seleccionar el monto con mayor prioridad
+            if (montosEncontrados.Any())
             {
-                resultado.Descripcion = string.Join(", ", conceptos.Take(3));
-                _logger.LogDebug($"Conceptos encontrados: {resultado.Descripcion}");
-            }
-            else if (!string.IsNullOrEmpty(resultado.Establecimiento))
-            {
-                resultado.Descripcion = $"Compra en {resultado.Establecimiento}";
-                _logger.LogDebug("Descripción generada desde establecimiento");
+                var mejorMonto = montosEncontrados
+                    .OrderByDescending(m => m.prioridad)
+                    .ThenByDescending(m => m.monto) // En caso de empate, el monto mayor suele ser el total
+                    .First();
+                
+                resultado.Monto = mejorMonto.monto;
+                _logger.LogDebug($"?? Monto seleccionado: {mejorMonto.monto:F2} (contexto: '{mejorMonto.contexto}')");
             }
             else
             {
-                resultado.Descripcion = "Compra con ticket";
-                _logger.LogDebug("Descripción por defecto");
+                _logger.LogWarning("?? No se pudo extraer el monto del ticket");
             }
+        }
+
+        /// <summary>
+        /// Genera una descripción basada en el contenido del ticket
+        /// </summary>
+        private void GenerarDescripcion(string[] lineas, TransaccionOcrResult resultado)
+        {
+            if (!string.IsNullOrEmpty(resultado.Establecimiento))
+            {
+                resultado.Descripcion = $"Compra en {resultado.Establecimiento}";
+            }
+            else
+            {
+                // Buscar líneas que parezcan productos/servicios
+                var productosEncontrados = lineas
+                    .Where(l => l.Length > 5 && l.Length < 50)
+                    .Where(l => !Regex.IsMatch(l, @"^\d+$"))
+                    .Where(l => !Regex.IsMatch(l, @"\d{2}[/-]\d{2}"))
+                    .Take(2)
+                    .ToList();
+                
+                if (productosEncontrados.Any())
+                {
+                    resultado.Descripcion = string.Join(", ", productosEncontrados);
+                }
+                else
+                {
+                    resultado.Descripcion = "Compra con ticket";
+                }
+            }
+            
+            _logger.LogDebug($"?? Descripción generada: {resultado.Descripcion}");
         }
     }
 }

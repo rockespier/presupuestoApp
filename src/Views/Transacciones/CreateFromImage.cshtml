@@ -1,7 +1,7 @@
-@model Transaccion
+ï»¿@model Transaccion
 
 @{
-    ViewData["Title"] = "?? Registrar desde Imagen";
+    ViewData["Title"] = "Registrar desde Imagen";
     var rutaImagen = ViewBag.RutaImagen as string;
     var textoCompleto = ViewBag.TextoCompleto as string;
     var confianza = ViewBag.Confianza as float?;
@@ -11,8 +11,13 @@
 
 <!-- Header -->
 <div class="mb-6">
-    <h2 class="text-3xl font-bold text-slate-800 dark:text-white mb-2">?? Registrar Gasto desde Imagen</h2>
-    <p class="text-slate-600 dark:text-slate-400">La imagen fue procesada automáticamente. Revisa y ajusta los datos según sea necesario.</p>
+    <div class="flex items-center gap-3 mb-2">
+        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h2 class="text-3xl font-bold text-slate-800 dark:text-white">Registrar Gasto desde Imagen</h2>
+    </div>
+    <p class="text-slate-600 dark:text-slate-400">La imagen fue procesada automÃ¡ticamente. Revisa y ajusta los datos segÃºn sea necesario.</p>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -23,7 +28,10 @@
         {
             <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    ??? Imagen Procesada
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Imagen Procesada
                 </h3>
                 <div class="rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-600">
                     <img src="@rutaImagen" 
@@ -36,7 +44,10 @@
         <!-- Resultados del OCR -->
         <div class="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl shadow-lg border border-blue-200 dark:border-blue-700 p-6">
             <h3 class="text-lg font-bold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
-                ?? Información Extraída Automáticamente
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                InformaciÃ³n ExtraÃ­da AutomÃ¡ticamente
             </h3>
 
             <!-- Mensajes del OCR -->
@@ -46,7 +57,7 @@
                     @foreach (var mensaje in mensajesOcr)
                     {
                         <div class="flex items-start gap-2 text-sm">
-                            <span class="text-blue-600 dark:text-blue-400">?</span>
+                            <span class="text-blue-600 dark:text-blue-400">â¬¤</span>
                             <span class="text-slate-700 dark:text-slate-300">@mensaje</span>
                         </div>
                     }
@@ -67,12 +78,16 @@
                 </div>
             }
 
-            <!-- Texto Completo Extraído (Colapsable) -->
+            <!-- Texto Completo ExtraÃ­do (Colapsable) -->
             @if (!string.IsNullOrEmpty(textoCompleto))
             {
                 <details class="mt-4">
-                    <summary class="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 transition">
-                        ?? Ver texto completo extraído
+                    <summary class="cursor-pointer text-sm font-semibold text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        Ver texto completo extraÃ­do
                     </summary>
                     <div class="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg text-xs text-slate-600 dark:text-slate-400 font-mono max-h-40 overflow-y-auto whitespace-pre-wrap">@textoCompleto</div>
                 </details>
@@ -80,17 +95,22 @@
         </div>
     </div>
 
-    <!-- Columna Derecha: Formulario de Edición -->
+    <!-- Columna Derecha: Formulario de EdiciÃ³n -->
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 lg:p-8">
         <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
-            ?? Revisar y Completar Datos
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Revisar y Completar Datos
         </h3>
 
         <form asp-action="Create" method="post" class="space-y-6">
             <!-- Validation Summary -->
             <div asp-validation-summary="ModelOnly" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-lg p-4" role="alert">
                 <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
-                    ??
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     <span class="font-semibold">Por favor corrige los siguientes errores:</span>
                 </div>
             </div>
@@ -98,10 +118,12 @@
             <!-- Alerta informativa -->
             <div class="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg p-4">
                 <div class="flex items-start gap-2">
-                    <span class="text-amber-600 dark:text-amber-400 text-xl">??</span>
+                    <svg class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
                     <div class="text-sm text-amber-800 dark:text-amber-300">
-                        <p class="font-semibold mb-1">Revisa los datos extraídos</p>
-                        <p>El OCR puede cometer errores. Verifica que el monto, fecha y descripción sean correctos antes de guardar.</p>
+                        <p class="font-semibold mb-1">Revisa los datos extraÃ­dos</p>
+                        <p>El OCR puede cometer errores. Verifica que el monto, fecha y descripciÃ³n sean correctos antes de guardar.</p>
                     </div>
                 </div>
             </div>
@@ -109,10 +131,10 @@
             <!-- Tipo (Forzado a Egreso) -->
             <input type="hidden" asp-for="Tipo" value="Egreso" />
 
-            <!-- Descripción -->
+            <!-- DescripciÃ³n -->
             <div>
                 <label asp-for="Descripcion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    ?? Descripción
+                    DescripciÃ³n
                 </label>
                 <input asp-for="Descripcion" 
                        class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
@@ -122,7 +144,7 @@
                 @if (!string.IsNullOrEmpty(establecimiento))
                 {
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        ?? Establecimiento detectado: <strong>@establecimiento</strong>
+                        Establecimiento detectado: <strong>@establecimiento</strong>
                     </p>
                 }
             </div>
@@ -130,7 +152,7 @@
             <!-- Moneda -->
             <div>
                 <label asp-for="MonedaTransaccion" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    ?? Moneda
+                    Moneda
                 </label>
                 <select asp-for="MonedaTransaccion" 
                         class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
@@ -141,7 +163,7 @@
             <!-- Monto -->
             <div>
                 <label asp-for="Monto" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    ?? Monto
+                    Monto
                 </label>
                 <div class="flex items-center gap-2">
                     <span id="simboloMoneda" class="px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-lg border-2 border-slate-200 dark:border-slate-600">
@@ -159,7 +181,7 @@
             <!-- Fecha -->
             <div>
                 <label asp-for="Fecha" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    ?? Fecha del Movimiento
+                    Fecha del Movimiento
                 </label>
                 <input asp-for="Fecha" 
                        type="date" 
@@ -171,7 +193,7 @@
             <!-- Cuenta -->
             <div>
                 <label asp-for="CuentaId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    ?? ¿De qué cuenta?
+                    Â¿De quÃ© cuenta?
                 </label>
                 <select asp-for="CuentaId" 
                         id="CuentaId"
@@ -182,22 +204,22 @@
                 <span asp-validation-for="CuentaId" class="text-red-600 text-sm mt-1"></span>
             </div>
 
-            <!-- Categoría -->
+            <!-- CategorÃ­a -->
             <div id="divCategoria">
                 <label asp-for="CategoriaGastoId" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    ??? Categoría
+                    CategorÃ­a
                 </label>
                 <select asp-for="CategoriaGastoId" 
                         class="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition outline-none" 
                         asp-items="ViewBag.CategoriaGastoId">
-                    <option value="">-- Selecciona una categoría --</option>
+                    <option value="">-- Selecciona una categorÃ­a --</option>
                 </select>
             </div>
 
-            <!-- Opciones de Cuotas (Tarjeta de Crédito) -->
+            <!-- Opciones de Cuotas (Tarjeta de CrÃ©dito) -->
             <div id="divCuotas" class="hidden bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 rounded-xl p-4">
                 <label class="block text-sm font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                    ?? Opciones de Pago (Tarjeta de Crédito)
+                    Opciones de Pago (Tarjeta de CrÃ©dito)
                 </label>
                 <select name="numeroCuotas" 
                         class="w-full px-4 py-3 border-2 border-blue-200 dark:border-blue-700 rounded-xl bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition outline-none">
@@ -207,7 +229,7 @@
                     <option value="5">5 Cuotas (Sin intereses)</option>
                 </select>
                 <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                    ?? Se dividirá el monto en registros mensuales separados
+                    Se dividirÃ¡ el monto en registros mensuales separados
                 </p>
             </div>
 
@@ -215,19 +237,25 @@
             <div class="pt-4 border-t border-slate-200 dark:border-slate-700 space-y-3">
                 <button type="submit" 
                         class="w-full py-3.5 bg-gradient-to-r from-primary-500 to-blue-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-blue-700 transform hover:scale-[1.02] transition shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
-                    ?? Guardar Transacción
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Guardar TransacciÃ³n
                 </button>
                 
                 <a asp-action="Create" 
                    class="block w-full py-3 text-center bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">
-                    ?? Registrar manualmente (sin OCR)
+                    Registrar manualmente (sin OCR)
                 </a>
             </div>
 
             <!-- Back Link -->
             <div class="text-center">
-                <a asp-action="Index" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium transition">
-                    ? Volver al historial
+                <a asp-action="Index" class="text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 text-sm font-medium transition inline-flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Volver al historial
                 </a>
             </div>
         </form>
@@ -237,14 +265,16 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        var tarjetasIds = @Html.Raw(ViewBag.TarjetasIds ?? "[]");
+       
+         // Correzione: serializza sempre l'array como JSON valido para JS
+            var tarjetasIds = @(ViewBag.TarjetasIds != null ? Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.TarjetasIds)) : "[]");
 
-        // Actualizar símbolo de moneda
+        // Actualizar sÃ­mbolo de moneda
         document.querySelector('select[name="MonedaTransaccion"]').addEventListener('change', function() {
             const moneda = this.value;
             let simbolo = 'S/';
             if (moneda === '1') simbolo = '$';
-            else if (moneda === '2') simbolo = '€';
+            else if (moneda === '2') simbolo = 'â‚¬';
             document.getElementById('simboloMoneda').textContent = simbolo;
         });
 
