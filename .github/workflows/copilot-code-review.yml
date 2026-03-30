@@ -40,9 +40,19 @@ jobs:
           curl -fsSL https://gh.io/copilot-install | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: ✅ Verify Copilot authentication
+        env:
+          GH_TOKEN: ${{ secrets.COPILOT_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "Missing GitHub token. Add COPILOT_PAT or ensure GITHUB_TOKEN is available." >&2
+            exit 1
+          fi
+          echo "GitHub token detected."
+
       - name: 🤖 Analyze code and create issues with Copilot CLI
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          GH_TOKEN: ${{ secrets.COPILOT_PAT || secrets.GITHUB_TOKEN }}
           SUGGESTION_TYPE: ${{ inputs.suggestion_type || 'all' }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
