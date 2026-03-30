@@ -33,19 +33,30 @@ jobs:
 
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: 📦 Install GitHub Copilot CLI
         run: |
           curl -fsSL https://gh.io/copilot-install | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: ✅ Verify Copilot authentication
+        env:
+         COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
+        run: |
+          if [ -z "$COPILOT_GITHUB_TOKEN" ]; then
+            echo "Missing COPILOT_PAT. Add a valid fine-grained PAT with Copilot Requests permission." >&2
+            exit 1
+          fi
+          echo "Copilot token detected."
+
       - name: 🤖 Analyze code and create issues with Copilot CLI
         env:
-          GH_TOKEN: ${{ secrets.COPILOT_PAT }}
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_PAT }}
           SUGGESTION_TYPE: ${{ inputs.suggestion_type || 'all' }}
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          copilot -p "..." --allow-all-tools
 
           # Build the prompt based on suggestion type
           if [ "$SUGGESTION_TYPE" = "all" ]; then
