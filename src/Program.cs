@@ -1,30 +1,39 @@
-using Hangfire;
+ï»¿using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Servicios;
-
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// AGREGAR ESTAS LÍNEAS: Configurar Entity Framework Core con SQL Server
+// Configurar Entity Framework Core con SQL Server
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<PresupuestoContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Añadir esto para poder leer la Cookie en el HTML (Navbar)
+// âœ… Configurar Health Checks con clase personalizada
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>(
+        name: "database",
+        tags: new[] { "database", "ready" }
+    );
+
+// AÃ±adir esto para poder leer la Cookie en el HTML (Navbar)
 builder.Services.AddHttpContextAccessor();
 
-// Configurar la Autenticación
+// Configurar la AutenticaciÃ³n
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Auth/Login"; // A dónde te envía si no estás logueado
-        options.AccessDeniedPath = "/Auth/AccesoDenegado"; // Si un Usuario intenta entrar a zona de Admin
-        options.ExpireTimeSpan = TimeSpan.FromDays(7); // La sesión dura 7 días
+        options.LoginPath = "/Auth/Login";
+        options.AccessDeniedPath = "/Auth/AccesoDenegado";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
     });
 
 // Configurar Hangfire
@@ -40,18 +49,39 @@ builder.Services.AddHangfireServer();
 builder.Services.AddScoped<AutomatizacionService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<PushNotificationService>();
-builder.Services.AddScoped<OcrService>();
+builder.Services.AddScoped<AzureOcrService>(); // âœ¨ Nuevo: Azure OCR para mayor precisiÃ³n
+builder.Services.AddHttpClient(); // Para Azure Computer Vision API
 
 var app = builder.Build();
 
-// Activar el panel de control de Hangfire (solo accesible para ti)
+// Endpoint de Health Check
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                component = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description
+            }),
+            duration = report.TotalDuration
+        };
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+    }
+});
+
+// Activar el panel de control de Hangfire
 app.UseHangfireDashboard("/hangfire");
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -68,27 +98,17 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// ? IMPORTANTE: Registrar los jobs recurrentes ANTES de app.Run()
+// Registrar los jobs recurrentes ANTES de app.Run()
 using (var scope = app.Services.CreateScope())
 {
     var service = scope.ServiceProvider.GetRequiredService<AutomatizacionService>();
     var pushService = scope.ServiceProvider.GetRequiredService<PushNotificationService>();
 
-    // "0 0 * * *" es formato Cron para: Todos los días a medianoche
     RecurringJob.AddOrUpdate("ProcesarFijosDiarios", () => service.ProcesarMovimientosFijos(), "1 0 * * *");
-
-    // 1. Reporte Mensual por Correo (Día 1 de cada mes a las 8:00 AM)
     RecurringJob.AddOrUpdate("ResumenMensual", () => service.EnviarResumenMensual(), "0 8 1 * *");
-
-    // "0 1 1 * *" significa: Minuto 0, Hora 1 (AM), Día 1 de cada mes.
     RecurringJob.AddOrUpdate("GenerarAlquileres", () => service.GenerarDeudasMensuales(), "0 1 1 * *");
-
-    // Notificaciones Push - Vencimientos (todos los días a las 9:00 AM)
     RecurringJob.AddOrUpdate("NotificarVencimientos", () => pushService.NotificarVencimientosProximos(), "0 9 * * *");
-
-    // Notificaciones Push - Presupuestos (todos los días a las 20:00)
     RecurringJob.AddOrUpdate("NotificarPresupuestos", () => pushService.NotificarPresupuestosExcedidos(), "0 20 * * *");
 }
 
-// Esta línea debe ser la ÚLTIMA
-app.Run();app.Run();
+app.Run();

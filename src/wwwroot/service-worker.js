@@ -1,8 +1,8 @@
 // Service Worker para PresupuestoFamiliarApp
-// Versión: 1.0.1
+// Versión: 1.0.2
 
-const CACHE_NAME = 'presupuesto-app-v13';
-const RUNTIME_CACHE = 'presupuesto-runtime-v13';
+const CACHE_NAME = 'presupuesto-app-v14';
+const RUNTIME_CACHE = 'presupuesto-runtime-v14';
 
 // Archivos esenciales para cachear en la instalación
 const PRECACHE_URLS = [
@@ -64,8 +64,14 @@ self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
 
+    // ? NO cachear peticiones que no sean GET
+    if (request.method !== 'GET') {
+        event.respondWith(fetch(request));
+        return;
+    }
+
     // Estrategia: Network First para datos dinámicos (API calls)
-    if (request.url.includes('/api/') || request.method !== 'GET') {
+    if (request.url.includes('/api/')) {
         event.respondWith(networkFirst(request));
         return;
     }
@@ -127,16 +133,24 @@ async function networkFirst(request) {
     
     try {
         const response = await fetch(request);
-        if (response.ok) {
+        
+        // ? FIX: Solo cachear peticiones GET con respuesta exitosa
+        if (response.ok && request.method === 'GET') {
             cache.put(request, response.clone());
         }
+        
         return response;
     } catch (error) {
         console.error('[Service Worker] Error en networkFirst:', error);
-        const cached = await cache.match(request);
-        if (cached) {
-            return cached;
+        
+        // Solo buscar en caché si es GET
+        if (request.method === 'GET') {
+            const cached = await cache.match(request);
+            if (cached) {
+                return cached;
+            }
         }
+        
         throw error;
     }
 }
