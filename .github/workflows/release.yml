@@ -46,6 +46,7 @@ jobs:
         
       - name: 📝 Build changelog
         id: build_changelog
+        continue-on-error: true
         uses: mikepenz/release-changelog-builder-action@v5
         with:
           configuration: "release-changelog-builder-config.json"
@@ -56,9 +57,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: Release ${{ github.ref_name }}
-          body: ${{ steps.build_changelog.outputs.changelog }}
+          body: ${{ steps.build_changelog.outputs.changelog || format('Release {0}', github.ref_name) }}
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: presupuesto-app.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
