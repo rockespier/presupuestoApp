@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Models;
@@ -15,12 +16,14 @@ namespace PresupuestoFamiliarApp.Controllers
         // Aggiungi il campo privato per EmailService
         private readonly EmailService _emailService;
         private readonly IWebHostEnvironment _env; // Para acceder a las rutas físicas
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(PresupuestoContext context, EmailService emailService, IWebHostEnvironment env)
+        public AuthController(PresupuestoContext context, EmailService emailService, IWebHostEnvironment env, ILogger<AuthController> logger)
         {
             _context = context;
             _emailService = emailService;
             _env = env;
+            _logger = logger;
         }
 
         // GET: Mostrar pantalla de Login
@@ -37,6 +40,7 @@ namespace PresupuestoFamiliarApp.Controllers
         // POST: Procesar Login
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [EnableRateLimiting("login")]
         public async Task<IActionResult> Login(string nombreUsuario, string password)
         {
             // IMPORTANT: Sign out any existing session first to prevent session conflicts
@@ -69,7 +73,11 @@ namespace PresupuestoFamiliarApp.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            // Si falla
+            // Si falla: registrar el intento fallido con nivel Warning para detección de ataques
+            var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var sanitizedUsuario = nombreUsuario?.Replace("\r", "").Replace("\n", "") ?? string.Empty;
+            _logger.LogWarning("Intento de login fallido para el usuario '{NombreUsuario}' desde la IP {ClientIp}.", sanitizedUsuario, clientIp);
+
             TempData["Error"] = "Usuario/Email o contraseña incorrectos.";
             return RedirectToAction("Login");
         }
