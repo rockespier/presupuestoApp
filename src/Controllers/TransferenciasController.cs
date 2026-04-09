@@ -20,7 +20,7 @@ namespace PresupuestoFamiliarApp.Controllers
         {
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
 
-            var cuentas = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+            var cuentas = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
             ViewBag.Cuentas = new SelectList(cuentas, "Id", "Nombre");
 
             // NUEVO: Obtener la moneda preferida del usuario
