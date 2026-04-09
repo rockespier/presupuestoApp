@@ -278,6 +278,16 @@ namespace PresupuestoFamiliarApp.Servicios
             var mesActual = DateTime.Now.Month;
             var anioActual = DateTime.Now.Year;
 
+            // Cargar todos los gastos del mes en una sola consulta y agrupar en memoria
+            // para evitar el problema N+1 de ejecutar una query por cada categoría
+            var gastosPorCategoria = await _context.Transacciones
+                .Where(t => t.Fecha.Month == mesActual && t.Fecha.Year == anioActual
+                         && t.Tipo == TipoTransaccion.Egreso && !t.EsTransferencia
+                         && t.CategoriaGastoId != null)
+                .GroupBy(t => t.CategoriaGastoId)
+                .Select(g => new { CategoriaId = g.Key, Total = g.Sum(t => t.Monto) })
+                .ToDictionaryAsync(g => g.CategoriaId!.Value, g => g.Total);
+
             var suscripciones = await _context.PushSubscriptions
                 .Include(s => s.Usuario)
                 .Where(s => s.Activa && s.NotificarPresupuestos)
@@ -294,20 +304,15 @@ namespace PresupuestoFamiliarApp.Servicios
                     .Select(e => e.Id)
                     .ToListAsync();
 
-                // Obtener categorías con gastos del mes actual
+                // Obtener categorías con presupuesto del mes actual
                 var categorias = await _context.CategoriasGastos
                     .Where(c => espaciosUsuario.Contains(c.EspacioId))
                     .ToListAsync();
 
                 foreach (var categoria in categorias)
                 {
-                    var gastosMes = await _context.Transacciones
-                        .Where(t => t.Categoria != null && t.Categoria.Id == categoria.Id
-                            && t.Fecha.Month == mesActual
-                            && t.Fecha.Year == anioActual
-                            && t.Tipo == TipoTransaccion.Egreso
-                            && !t.EsTransferencia)
-                        .SumAsync(t => t.Monto);
+                    // Consultar el total desde el diccionario en memoria (sin roundtrip a la BD)
+                    var gastosMes = gastosPorCategoria.TryGetValue(categoria.Id, out var totalGastos) ? totalGastos : 0m;
 
                     // Notificar si se excedió el 90% del presupuesto
                     if (gastosMes >= categoria.PresupuestoMensual * 0.9m)
