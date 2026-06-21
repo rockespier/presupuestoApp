@@ -22,10 +22,10 @@ namespace PresupuestoFamiliarApp.Controllers
         }
 
         // GET: Crear Usuario
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             // Enviamos la lista completa de espacios para mostrar casillas (checkboxes)
-            ViewBag.Espacios = _context.Espacios.ToList();
+            ViewBag.Espacios = await _context.Espacios.ToListAsync();
             return View();
         }
 
@@ -59,7 +59,7 @@ namespace PresupuestoFamiliarApp.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Espacios = _context.Espacios.ToList();
+            ViewBag.Espacios = await _context.Espacios.ToListAsync();
             return View(usuario);
         }
         // GET: Mostrar formulario de Edición

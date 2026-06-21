@@ -28,8 +28,8 @@ namespace PresupuestoFamiliarApp.Controllers
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
 
             // Traer solo cuentas y categorías del espacio actual
-            var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
-            var categoriasDelEspacio = _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToList();
+            var cuentasDelEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
+            var categoriasDelEspacio = await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToListAsync();
 
             // Llenar los ViewBags con las listas filtradas
             ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre");
@@ -87,9 +87,9 @@ namespace PresupuestoFamiliarApp.Controllers
                     {
                         ModelState.AddModelError("", $"ERROR: Falta tasa de cambio de {transaccion.MonedaTransaccion} a {espacioActual.MonedaPrincipal} (Para tu presupuesto).");
                         // NUEVO: Recargar ViewBags necesarios (incluido TarjetasIds)
-                        var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+                        var cuentasDelEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
                         ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre", transaccion.CuentaId);
-                        ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CategoriaGastoId);
+                        ViewBag.CategoriaGastoId = new SelectList(await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToListAsync(), "Id", "Nombre", transaccion.CategoriaGastoId);
                         ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
                         ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
                         return View(transaccion);
@@ -112,9 +112,9 @@ namespace PresupuestoFamiliarApp.Controllers
                     {
                         ModelState.AddModelError("", $"ERROR: Falta tasa de cambio de {transaccion.MonedaTransaccion} a {cuenta.MonedaCuenta} (Para actualizar tu banco).");
                         // NUEVO: Recargar ViewBags necesarios (incluido TarjetasIds)
-                        var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+                        var cuentasDelEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
                         ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre", transaccion.CuentaId);
-                        ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CategoriaGastoId);
+                        ViewBag.CategoriaGastoId = new SelectList(await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToListAsync(), "Id", "Nombre", transaccion.CategoriaGastoId);
                         ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
                         ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
                         return View(transaccion);
@@ -132,9 +132,9 @@ namespace PresupuestoFamiliarApp.Controllers
                         {
                             ModelState.AddModelError("", $"ERROR: Saldo insuficiente. La cuenta '{cuenta.Nombre}' tiene {cuenta.MonedaCuenta} {cuenta.SaldoActual:N2}, pero intentas gastar {cuenta.MonedaCuenta} {montoParaLaCuenta:N2}.");
                             // NUEVO: Recargar ViewBags necesarios (incluido TarjetasIds)
-                            var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
+                            var cuentasDelEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
                             ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre", transaccion.CuentaId);
-                            ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId), "Id", "Nombre", transaccion.CategoriaGastoId);
+                            ViewBag.CategoriaGastoId = new SelectList(await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToListAsync(), "Id", "Nombre", transaccion.CategoriaGastoId);
                             ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasDelEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
                             ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
                             return View(transaccion);
@@ -207,9 +207,9 @@ namespace PresupuestoFamiliarApp.Controllers
 
             // Si hay error, recargamos la vista con todos los ViewBags necesarios
             int espacioActId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idC) ? idC : 1;
-            var cuentasEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActId).ToList();
+            var cuentasEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActId).ToListAsync();
             ViewBag.CuentaId = new SelectList(cuentasEspacio, "Id", "Nombre", transaccion.CuentaId);
-            ViewBag.CategoriaGastoId = new SelectList(_context.CategoriasGastos.Where(c => c.EspacioId == espacioActId), "Id", "Nombre", transaccion.CategoriaGastoId);
+            ViewBag.CategoriaGastoId = new SelectList(await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActId).ToListAsync(), "Id", "Nombre", transaccion.CategoriaGastoId);
             ViewBag.TarjetasIds = System.Text.Json.JsonSerializer.Serialize(cuentasEspacio.Where(c => c.EsCredito).Select(c => c.Id).ToList());
             ViewBag.SimboloMoneda = transaccion.MonedaTransaccion == Moneda.Dolares ? "$" : (transaccion.MonedaTransaccion == Moneda.Euros ? "€" : "S/");
 
@@ -656,8 +656,8 @@ namespace PresupuestoFamiliarApp.Controllers
         {
             int espacioActualId = int.TryParse(Request.Cookies["EspacioActivoId"], out int idCookie) ? idCookie : 1;
 
-            var cuentasDelEspacio = _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToList();
-            var categoriasDelEspacio = _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToList();
+            var cuentasDelEspacio = await _context.Cuentas.Where(c => c.EspacioId == espacioActualId).ToListAsync();
+            var categoriasDelEspacio = await _context.CategoriasGastos.Where(c => c.EspacioId == espacioActualId).ToListAsync();
 
             ViewBag.CuentaId = new SelectList(cuentasDelEspacio, "Id", "Nombre");
             ViewBag.CategoriaGastoId = new SelectList(categoriasDelEspacio, "Id", "Nombre");
