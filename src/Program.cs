@@ -1,11 +1,13 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using PresupuestoFamiliarApp.Data;
 using PresupuestoFamiliarApp.Servicios;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using System.Text.Json;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +28,19 @@ builder.Services.AddHealthChecks()
 
 // Añadir esto para poder leer la Cookie en el HTML (Navbar)
 builder.Services.AddHttpContextAccessor();
+
+// Configurar Rate Limiting para proteger el endpoint de Login contra fuerza bruta
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("login", o =>
+    {
+        o.PermitLimit = 5;
+        o.Window = TimeSpan.FromMinutes(15);
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 
 // Configurar la Autenticación
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -87,6 +102,8 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
